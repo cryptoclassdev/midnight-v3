@@ -1,0 +1,56 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Category {
+  CRYPTO
+  AI
+}
+
+model Article {
+  id            String   @id @default(cuid())
+  sourceUrl     String   @unique
+  sourceUrlHash String   @unique
+  sourceName    String
+  category      Category
+  originalTitle String
+  originalBody  String   @db.Text
+  title         String
+  summary       String   @db.Text
+  imageUrl      String?
+  imageBlurhash String?
+  publishedAt   DateTime
+  fetchedAt     DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category, publishedAt(sort: Desc)])
+  @@index([publishedAt(sort: Desc)])
+}
+
+model MarketCoin {
+  id             String   @id
+  symbol         String
+  name           String
+  currentPrice   Float
+  priceChange24h Float
+  marketCap      Float
+  imageUrl       String?
+  updatedAt      DateTime @updatedAt
+}
+
+model FeedSource {
+  id          String    @id @default(cuid())
+  url         String    @unique
+  name        String
+  category    Category
+  isActive    Boolean   @default(true)
+  lastFetchAt DateTime?
+  createdAt   DateTime  @default(now())
+}

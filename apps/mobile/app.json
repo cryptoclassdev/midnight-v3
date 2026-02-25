@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "MintFeed",
+    "slug": "mintfeed",
+    "version": "1.0.0",
+    "scheme": "mintfeed",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0A0A0A"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.mintfeed.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0A"
+      },
+      "package": "com.mintfeed.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "experiments": {
+      "autolinkingModuleResolution": true
+    }
+  }
+}
