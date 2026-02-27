@@ -76,7 +76,7 @@ export function SwipeFeed() {
     >
       {articles.map((article, index) => (
         <View key={article.id} style={styles.page}>
-          <NewsCard article={article} variant={index} />
+          <NewsCard article={article} />
         </View>
       ))}
     </PagerView>

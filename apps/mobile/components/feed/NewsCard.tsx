@@ -1,43 +1,53 @@
-import { View, Text, StyleSheet, Dimensions, Pressable } from "react-native";
+import { View, Text, StyleSheet, Dimensions, Pressable, Linking } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import type { Article } from "@mintfeed/shared";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-const HEADLINE_WORDS: Record<string, string> = {
-  crash: "CRASH",
-  drop: "DROP",
-  fall: "FALL",
-  dump: "DUMP",
-  panic: "PANIC",
-  surge: "SURGE",
-  rally: "RALLY",
-  rise: "RISE",
-  pump: "PUMP",
-  boom: "BOOM",
-  hack: "HACK",
-  launch: "LAUNCH",
-  update: "UPDATE",
-  ban: "BAN",
-  SEC: "SEC",
-  ETF: "ETF",
-  AI: "AI",
-  fork: "FORK",
-  merge: "MERGE",
-  stake: "STAKE",
-};
+const NEGATIVE_KEYWORDS = [
+  "crash", "drop", "fall", "dump", "panic", "hack", "ban", "plunge",
+  "decline", "loss", "fear", "bearish", "sell-off", "liquidation", "scam",
+  "fraud", "theft", "vulnerability", "exploit", "attack", "warning", "risk",
+  "concern", "tumble", "sink", "plummet", "collapse", "downturn", "recession",
+  "slump", "reject", "fail", "penalty", "fine", "lawsuit", "crisis",
+];
 
-function extractHeadlineWord(title: string): string {
-  const lower = title.toLowerCase();
-  for (const [keyword, display] of Object.entries(HEADLINE_WORDS)) {
-    if (lower.includes(keyword.toLowerCase())) return display;
+const POSITIVE_KEYWORDS = [
+  "surge", "rally", "rise", "pump", "boom", "launch", "upgrade", "bullish",
+  "gain", "profit", "soar", "breakout", "milestone", "adoption", "approval",
+  "partnership", "integration", "growth", "record", "high", "success",
+  "recover", "bull", "ath", "all-time", "breakthrough", "innovation",
+  "support", "accept", "embrace", "fund", "invest", "optimism",
+];
+
+type Sentiment = "positive" | "negative" | "neutral";
+
+function detectSentiment(title: string, summary: string): Sentiment {
+  const text = `${title} ${summary}`.toLowerCase();
+  let positiveScore = 0;
+  let negativeScore = 0;
+
+  for (const keyword of POSITIVE_KEYWORDS) {
+    if (text.includes(keyword)) positiveScore++;
   }
-  const words = title.split(/\s+/).filter((w) => w.length > 3);
-  return (words[0] ?? "NEWS").toUpperCase();
+  for (const keyword of NEGATIVE_KEYWORDS) {
+    if (text.includes(keyword)) negativeScore++;
+  }
+
+  if (positiveScore > negativeScore) return "positive";
+  if (negativeScore > positiveScore) return "negative";
+  return "neutral";
+}
+
+const ACCENT_RED = "#E60000";
+const ACCENT_GREEN = "#00ff66";
+
+function getAccentColor(sentiment: Sentiment): string {
+  if (sentiment === "positive") return ACCENT_GREEN;
+  if (sentiment === "negative") return ACCENT_RED;
+  return ACCENT_GREEN;
 }
 
 function timeAgo(dateString: string): string {
@@ -53,26 +63,21 @@ function timeAgo(dateString: string): string {
   return `${days}D AGO`;
 }
 
-const ACCENT_RED = "#E60000";
-const ACCENT_GREEN = "#00ff66";
-
 interface NewsCardProps {
   article: Article;
-  variant?: number;
 }
 
-export function NewsCard({ article, variant = 0 }: NewsCardProps) {
-  const router = useRouter();
-  const isEvenVariant = variant % 2 === 0;
-  const accentColor = isEvenVariant ? ACCENT_RED : ACCENT_GREEN;
-  const headlineWord = extractHeadlineWord(article.title);
+export function NewsCard({ article }: NewsCardProps) {
+  const sentiment = detectSentiment(article.title, article.summary);
+  const accentColor = getAccentColor(sentiment);
+  const isNegative = sentiment === "negative";
 
   return (
     <Pressable
       style={styles.container}
-      onPress={() => router.push(`/article/${article.id}`)}
+      onPress={() => Linking.openURL(article.sourceUrl)}
     >
-      {/* Background image layer */}
+      {/* Background image */}
       {article.imageUrl && (
         <Image
           source={{ uri: article.imageUrl }}
@@ -83,33 +88,20 @@ export function NewsCard({ article, variant = 0 }: NewsCardProps) {
         />
       )}
 
-      {/* Dark gradient overlay on image */}
+      {/* Gradient overlay */}
       <LinearGradient
-        colors={[
-          "rgba(0,0,0,0.7)",
-          "rgba(0,0,0,0.3)",
-          "rgba(0,0,0,0.85)",
-        ]}
-        locations={[0, 0.35, 1]}
+        colors={["rgba(0,0,0,0.5)", "rgba(0,0,0,0.2)", "rgba(0,0,0,0.88)"]}
+        locations={[0, 0.3, 1]}
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Card gradient background (blends with image) */}
+      {/* Tinted gradient based on sentiment */}
       <LinearGradient
         colors={
-          isEvenVariant
-            ? ["rgba(0,0,0,0.6)", "rgba(26,5,5,0.4)", "rgba(42,0,0,0.5)"]
-            : ["rgba(0,0,0,0.6)", "rgba(5,5,5,0.3)", "rgba(10,10,10,0.5)"]
+          isNegative
+            ? ["transparent", "rgba(230,0,0,0.06)"]
+            : ["transparent", "rgba(0,255,102,0.04)"]
         }
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* Water line subtle gradient at bottom */}
-      <LinearGradient
-        colors={[
-          "transparent",
-          isEvenVariant ? "rgba(230,0,0,0.05)" : "rgba(0,255,102,0.03)",
-        ]}
         style={styles.waterLine}
       />
 
@@ -121,24 +113,6 @@ export function NewsCard({ article, variant = 0 }: NewsCardProps) {
         ✶
       </Text>
 
-      {/* Massive headline overlay */}
-      <View style={styles.headlineLayer} pointerEvents="none">
-        <Text
-          style={[
-            styles.headlineMassive,
-            isEvenVariant
-              ? { color: ACCENT_RED }
-              : {
-                  color: "rgba(20,20,20,0.9)",
-                },
-          ]}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-        >
-          {headlineWord}
-        </Text>
-      </View>
-
       {/* Content layer at bottom */}
       <View style={styles.contentLayer}>
         {/* Meta tag */}
@@ -148,48 +122,30 @@ export function NewsCard({ article, variant = 0 }: NewsCardProps) {
           </Text>
         </View>
 
-        {/* News title */}
-        <Text style={styles.newsTitle} numberOfLines={3}>
-          {article.title}
-        </Text>
+        {/* News title — fully visible */}
+        <Text style={styles.newsTitle}>{article.title}</Text>
 
-        {/* News snippet */}
-        <View style={[styles.snippetContainer, { borderLeftColor: accentColor }]}>
-          <Text style={styles.newsSnippet} numberOfLines={3}>
-            {article.summary}
-          </Text>
+        {/* News summary — fully visible */}
+        <View
+          style={[styles.snippetContainer, { borderLeftColor: accentColor }]}
+        >
+          <Text style={styles.newsSnippet}>{article.summary}</Text>
         </View>
 
         {/* Tech stat grid */}
         <View style={styles.statGrid}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>SOURCE</Text>
-            <Text style={styles.statValue}>{article.sourceName.toUpperCase()}</Text>
+            <Text style={styles.statValue}>
+              {article.sourceName.toUpperCase()}
+            </Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>PUBLISHED</Text>
-            <Text style={styles.statValue}>{timeAgo(article.publishedAt)}</Text>
+            <Text style={styles.statValue}>
+              {timeAgo(article.publishedAt)}
+            </Text>
           </View>
-        </View>
-      </View>
-
-      {/* Action sidebar */}
-      <View style={styles.actionSidebar}>
-        <View style={styles.actionGroup}>
-          <View style={styles.actionBtn}>
-            <Ionicons name="heart-outline" size={20} color="white" />
-          </View>
-        </View>
-        <View style={styles.actionGroup}>
-          <View style={styles.actionBtn}>
-            <Ionicons name="chatbubble-outline" size={20} color="white" />
-          </View>
-        </View>
-        <View style={styles.actionGroup}>
-          <View style={styles.actionBtn}>
-            <Ionicons name="share-outline" size={20} color="white" />
-          </View>
-          <Text style={styles.actionLabel}>SHARE</Text>
         </View>
       </View>
     </Pressable>
@@ -208,7 +164,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     width: SCREEN_WIDTH,
     height: "100%",
-    opacity: 0.4,
+    opacity: 0.5,
   },
   waterLine: {
     position: "absolute",
@@ -231,31 +187,11 @@ const styles = StyleSheet.create({
     bottom: 120,
     right: 20,
   },
-  headlineLayer: {
-    position: "absolute",
-    top: "15%",
-    left: 0,
-    width: "100%",
-    alignItems: "center",
-    zIndex: 0,
-    opacity: 0.8,
-  },
-  headlineMassive: {
-    fontFamily: fonts.display.regular,
-    fontSize: SCREEN_WIDTH * 0.28,
-    lineHeight: SCREEN_WIDTH * 0.28,
-    textTransform: "uppercase",
-    letterSpacing: -2,
-    textShadowColor: "rgba(0,0,0,0.8)",
-    textShadowOffset: { width: 0, height: 20 },
-    textShadowRadius: 50,
-  },
   contentLayer: {
     position: "relative",
     zIndex: 5,
     paddingHorizontal: 24,
     paddingBottom: 100,
-    maxWidth: "85%",
   },
   metaTag: {
     alignSelf: "flex-start",
@@ -313,32 +249,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: "#f0f0f0",
     marginTop: 2,
-  },
-  actionSidebar: {
-    position: "absolute",
-    right: 16,
-    bottom: 110,
-    alignItems: "center",
-    gap: 24,
-    zIndex: 20,
-  },
-  actionGroup: {
-    alignItems: "center",
-  },
-  actionBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-    backgroundColor: "rgba(0,0,0,0.4)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionLabel: {
-    fontFamily: fonts.mono.regular,
-    fontSize: fontSize.xxs,
-    color: "rgba(255,255,255,0.8)",
-    marginTop: 4,
   },
 });
