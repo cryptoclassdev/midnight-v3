@@ -8,6 +8,7 @@ const ACCENT = "#00D4AA";
 
 interface PredictionCardProps {
   market: PredictionMarket;
+  compact?: boolean;
 }
 
 function parsePrices(raw: unknown): Record<string, number> {
@@ -20,7 +21,7 @@ function parsePrices(raw: unknown): Record<string, number> {
   return result;
 }
 
-export function PredictionCard({ market }: PredictionCardProps) {
+export function PredictionCard({ market, compact = false }: PredictionCardProps) {
   const { data: livePrices } = useLiveMarketPrice(market.id);
 
   // Use live prices when available, fall back to pre-fetched prices
@@ -40,11 +41,11 @@ export function PredictionCard({ market }: PredictionCardProps) {
 
   return (
     <Pressable
-      style={styles.container}
+      style={[styles.container, compact && styles.containerCompact]}
       onPress={() => Linking.openURL(market.marketUrl)}
     >
       <View style={styles.left}>
-        <Text style={styles.label}>JUPITER</Text>
+        {!compact && <Text style={styles.label}>JUPITER</Text>}
         <Text style={styles.question} numberOfLines={1}>
           {market.question}
         </Text>
@@ -69,6 +70,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginTop: 8,
     gap: 12,
+  },
+  containerCompact: {
+    marginTop: 0,
+    paddingVertical: 8,
   },
   left: {
     flex: 1,

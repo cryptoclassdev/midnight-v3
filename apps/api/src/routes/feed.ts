@@ -21,7 +21,7 @@ const ARTICLE_SELECT = {
 const ARTICLE_SELECT_WITH_PREDICTIONS = {
   ...ARTICLE_SELECT,
   predictionMarkets: {
-    take: 1,
+    take: 3,
     include: {
       predictionMarket: {
         select: {
@@ -29,6 +29,7 @@ const ARTICLE_SELECT_WITH_PREDICTIONS = {
           question: true,
           outcomePrices: true,
           marketUrl: true,
+          volume: true,
         },
       },
     },
@@ -41,9 +42,13 @@ type ArticleWithPredictions = Awaited<
 
 function mapArticle(article: ArticleWithPredictions) {
   const { predictionMarkets, ...rest } = article;
+  const markets = predictionMarkets
+    .map((link) => link.predictionMarket)
+    .sort((a, b) => b.volume - a.volume)
+    .map(({ volume: _v, ...m }) => m);
   return {
     ...rest,
-    predictionMarket: predictionMarkets[0]?.predictionMarket ?? null,
+    predictionMarkets: markets,
   };
 }
 
@@ -87,7 +92,7 @@ feedRoutes.get("/feed", async (c) => {
 
       const hasMore = articles.length > limit;
       const raw = hasMore ? articles.slice(0, limit) : articles;
-      const data = raw.map((a) => ({ ...a, predictionMarket: null }));
+      const data = raw.map((a) => ({ ...a, predictionMarkets: [] }));
       const nextCursor = hasMore ? data[data.length - 1]?.id ?? null : null;
 
       return c.json({ data, nextCursor, hasMore });
@@ -108,7 +113,7 @@ feedRoutes.get("/feed/:id", async (c) => {
         ...ARTICLE_SELECT,
         originalBody: true,
         predictionMarkets: {
-          take: 1,
+          take: 3,
           include: {
             predictionMarket: {
               select: {
@@ -116,6 +121,7 @@ feedRoutes.get("/feed/:id", async (c) => {
                 question: true,
                 outcomePrices: true,
                 marketUrl: true,
+                volume: true,
               },
             },
           },
@@ -128,9 +134,13 @@ feedRoutes.get("/feed/:id", async (c) => {
     }
 
     const { predictionMarkets, ...rest } = article;
+    const markets = predictionMarkets
+      .map((link) => link.predictionMarket)
+      .sort((a, b) => b.volume - a.volume)
+      .map(({ volume: _v, ...m }) => m);
     return c.json({
       ...rest,
-      predictionMarket: predictionMarkets[0]?.predictionMarket ?? null,
+      predictionMarkets: markets,
     });
   } catch (error) {
     console.error("[Feed] GET /feed/:id error:", (error as Error).message);

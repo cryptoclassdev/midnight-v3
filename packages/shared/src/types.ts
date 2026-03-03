@@ -15,7 +15,7 @@ export interface Article {
   imageBlurhash: string | null;
   publishedAt: string;
   createdAt: string;
-  predictionMarket: PredictionMarket | null;
+  predictionMarkets: PredictionMarket[];
 }
 
 export interface MarketCoin {

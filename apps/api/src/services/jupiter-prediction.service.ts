@@ -72,10 +72,12 @@ function buildMarketUrl(eventId: string): string {
 
 // --- Exported functions ---
 
+const MAX_MARKETS_PER_ARTICLE = 3;
+
 /**
- * Search Jupiter for a prediction market matching an article title.
- * Search returns events without market pricing, so we fetch the top
- * event individually to get its markets.
+ * Search Jupiter for up to 3 prediction markets matching an article title.
+ * Search returns events without market pricing, so we fetch each event
+ * individually to get its markets with pricing data.
  */
 export async function matchMarketForArticle(
   articleId: string,
@@ -83,9 +85,19 @@ export async function matchMarketForArticle(
   _rewrittenTitle?: string,
 ): Promise<void> {
   try {
+    // Check how many markets already linked — skip if already at cap
+    const existingLinks = await prisma.articlePredictionMarket.findMany({
+      where: { articleId },
+      select: { predictionMarketId: true },
+    });
+    const existingIds = new Set(existingLinks.map((l) => l.predictionMarketId));
+    const slotsRemaining = MAX_MARKETS_PER_ARTICLE - existingIds.size;
+
+    if (slotsRemaining <= 0) return;
+
     const response = await jupiterClient
       .get("events/search", {
-        searchParams: { query: originalTitle.slice(0, 120), limit: 5 },
+        searchParams: { query: originalTitle.slice(0, 120), limit: 10 },
       })
       .json<JupiterSearchResponse>();
 
@@ -97,7 +109,9 @@ export async function matchMarketForArticle(
       return;
     }
 
-    // Search results don't include market pricing — fetch each event individually
+    // Collect valid markets across all events, excluding already-linked ones
+    const candidates: Array<{ market: JupiterMarket; event: JupiterEvent }> = [];
+
     for (const searchEvent of events) {
       if (!searchEvent.isActive) continue;
 
@@ -112,6 +126,7 @@ export async function matchMarketForArticle(
 
       for (const market of fullEvent.markets) {
         if (market.status !== "open") continue;
+        if (existingIds.has(market.marketId)) continue;
 
         const pricing = market.pricing;
         if (!pricing || pricing.volume < MIN_VOLUME_USD) continue;
@@ -120,92 +135,112 @@ export async function matchMarketForArticle(
         const hasValidPrices = Object.values(outcomePrices).some((v) => v > 0);
         if (!hasValidPrices) continue;
 
-        const eventMeta = fullEvent.metadata;
-        const marketUrl = buildMarketUrl(fullEvent.eventId);
-        const volumeUsd = Number(fullEvent.volumeUsd) / MICRO_USD;
-
-        await prisma.predictionMarket.upsert({
-          where: { id: market.marketId },
-          update: {
-            eventId: fullEvent.eventId,
-            question: eventMeta.title,
-            outcomePrices,
-            outcomes: ["Yes", "No"],
-            liquidity: volumeUsd,
-            volume: pricing.volume,
-            endDate: market.closeTime ? new Date(market.closeTime * 1000) : null,
-            imageUrl: eventMeta.imageUrl,
-            marketUrl,
-            closed: false,
-            category: fullEvent.category,
-            result: market.result,
-          },
-          create: {
-            id: market.marketId,
-            eventId: fullEvent.eventId,
-            question: eventMeta.title,
-            outcomePrices,
-            outcomes: ["Yes", "No"],
-            liquidity: volumeUsd,
-            volume: pricing.volume,
-            endDate: market.closeTime ? new Date(market.closeTime * 1000) : null,
-            imageUrl: eventMeta.imageUrl,
-            marketUrl,
-            closed: false,
-            category: fullEvent.category,
-            result: market.result,
-          },
-        });
-
-        await prisma.articlePredictionMarket.upsert({
-          where: { articleId_predictionMarketId: { articleId, predictionMarketId: market.marketId } },
-          update: {},
-          create: { articleId, predictionMarketId: market.marketId },
-        });
-
-        console.log(`[Jupiter] Matched: "${eventMeta.title.slice(0, 50)}..." for "${originalTitle.slice(0, 40)}"`);
-        return;
+        candidates.push({ market, event: fullEvent });
       }
     }
 
-    console.log(`[Jupiter] No open market with volume for "${originalTitle.slice(0, 50)}"`);
+    if (candidates.length === 0) {
+      console.log(`[Jupiter] No new open markets for "${originalTitle.slice(0, 50)}"`);
+      return;
+    }
+
+    // Take top markets by volume, only filling remaining slots
+    candidates.sort((a, b) => b.market.pricing.volume - a.market.pricing.volume);
+    const topMarkets = candidates.slice(0, slotsRemaining);
+
+    let matched = 0;
+    for (const { market, event } of topMarkets) {
+      const outcomePrices = buildOutcomePrices(market.pricing);
+      const eventMeta = event.metadata;
+      const marketUrl = buildMarketUrl(event.eventId);
+      const volumeUsd = Number(event.volumeUsd) / MICRO_USD;
+
+      await prisma.predictionMarket.upsert({
+        where: { id: market.marketId },
+        update: {
+          eventId: event.eventId,
+          question: eventMeta.title,
+          outcomePrices,
+          outcomes: ["Yes", "No"],
+          liquidity: volumeUsd,
+          volume: market.pricing.volume,
+          endDate: market.closeTime ? new Date(market.closeTime * 1000) : null,
+          imageUrl: eventMeta.imageUrl,
+          marketUrl,
+          closed: false,
+          category: event.category,
+          result: market.result,
+        },
+        create: {
+          id: market.marketId,
+          eventId: event.eventId,
+          question: eventMeta.title,
+          outcomePrices,
+          outcomes: ["Yes", "No"],
+          liquidity: volumeUsd,
+          volume: market.pricing.volume,
+          endDate: market.closeTime ? new Date(market.closeTime * 1000) : null,
+          imageUrl: eventMeta.imageUrl,
+          marketUrl,
+          closed: false,
+          category: event.category,
+          result: market.result,
+        },
+      });
+
+      await prisma.articlePredictionMarket.upsert({
+        where: { articleId_predictionMarketId: { articleId, predictionMarketId: market.marketId } },
+        update: {},
+        create: { articleId, predictionMarketId: market.marketId },
+      });
+
+      matched++;
+      console.log(`[Jupiter] Matched ${matched}/${topMarkets.length}: "${eventMeta.title.slice(0, 50)}..." for "${originalTitle.slice(0, 40)}"`);
+    }
+
+    console.log(`[Jupiter] Linked ${matched} new markets to "${originalTitle.slice(0, 40)}" (total: ${existingIds.size + matched})`);
   } catch (error) {
     console.error(`[Jupiter] Search failed for "${originalTitle.slice(0, 40)}":`, (error as Error).message);
   }
 }
 
 /**
- * Backfill prediction market matches for articles that don't have one.
+ * Backfill prediction market matches for articles with fewer than 3 markets.
  */
 export async function backfillMarketMatches(): Promise<void> {
-  const unmatched = await prisma.article.findMany({
-    where: { predictionMarkets: { none: {} } },
-    select: { id: true, originalTitle: true, title: true },
-    orderBy: { publishedAt: "desc" },
-    take: 100,
-  });
+  // Find articles with fewer than MAX_MARKETS_PER_ARTICLE linked markets
+  const undermatched = await prisma.$queryRaw<Array<{ id: string; originalTitle: string; title: string; linkCount: bigint }>>`
+    SELECT a.id, a."originalTitle", a.title, COUNT(apm.id)::bigint AS "linkCount"
+    FROM "Article" a
+    LEFT JOIN "ArticlePredictionMarket" apm ON apm."articleId" = a.id
+    GROUP BY a.id
+    HAVING COUNT(apm.id) < ${MAX_MARKETS_PER_ARTICLE}
+    ORDER BY a."publishedAt" DESC
+    LIMIT 100
+  `;
 
-  if (unmatched.length === 0) {
-    console.log("[Jupiter] No unmatched articles to backfill");
+  if (undermatched.length === 0) {
+    console.log("[Jupiter] No articles to backfill");
     return;
   }
 
-  console.log(`[Jupiter] Backfilling ${unmatched.length} articles...`);
+  console.log(`[Jupiter] Backfilling ${undermatched.length} articles (< ${MAX_MARKETS_PER_ARTICLE} markets)...`);
 
-  let matched = 0;
-  for (const article of unmatched) {
+  let improved = 0;
+  for (const article of undermatched) {
+    const beforeCount = Number(article.linkCount);
     try {
       await matchMarketForArticle(article.id, article.originalTitle, article.title);
-      const link = await prisma.articlePredictionMarket.findFirst({
+      const afterCount = await prisma.articlePredictionMarket.count({
         where: { articleId: article.id },
       });
-      if (link) matched++;
+      if (afterCount > beforeCount) improved++;
     } catch (error) {
       console.error(`[Jupiter] Backfill failed for "${article.originalTitle.slice(0, 40)}":`, (error as Error).message);
     }
   }
 
-  console.log(`[Jupiter] Backfilled ${matched}/${unmatched.length} articles`);
+  console.log(`[Jupiter] Backfilled: ${improved}/${undermatched.length} articles gained new markets`);
 }
 
 /**

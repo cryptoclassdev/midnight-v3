@@ -86,7 +86,7 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
   const cleanTitle = stripEmoji(article.title);
   const cleanSummary = stripEmoji(article.summary);
 
-  const topMarket = article.predictionMarket;
+  const markets = article.predictionMarkets ?? [];
 
   return (
     <View style={[styles.container, { width: screenWidth, height: screenHeight }]}>
@@ -146,8 +146,14 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
         {/* Summary */}
         <Text style={styles.summary}>{cleanSummary}</Text>
 
-        {/* Prediction market */}
-        {topMarket && <PredictionCard market={topMarket} />}
+        {/* Prediction markets (up to 3) */}
+        {markets.length > 0 && (
+          <View style={styles.marketsContainer}>
+            {markets.map((market) => (
+              <PredictionCard key={market.id} market={market} compact={markets.length > 1} />
+            ))}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -247,5 +253,8 @@ const styles = StyleSheet.create({
     letterSpacing: letterSpacing.wide,
     textDecorationLine: "underline",
     textTransform: "uppercase",
+  },
+  marketsContainer: {
+    gap: 6,
   },
 });
