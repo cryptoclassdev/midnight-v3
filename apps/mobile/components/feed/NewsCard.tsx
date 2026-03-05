@@ -151,12 +151,17 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
         <Text style={styles.summary}>{cleanSummary}</Text>
 
         {/* Prediction markets (up to 3) */}
-        {markets.length > 0 && (
+        {markets.length > 0 ? (
           <View style={styles.marketsContainer}>
             {markets.map((market) => (
               <PredictionCard key={market.id} market={market} />
             ))}
           </View>
+        ) : (
+          <Pressable style={styles.createMarketButton} disabled>
+            <Text style={styles.createMarketText}>+ Create a Market</Text>
+            <Text style={styles.comingSoonBadge}>Coming Soon</Text>
+          </Pressable>
         )}
       </View>
     </View>
@@ -261,5 +266,38 @@ const styles = StyleSheet.create({
   },
   marketsContainer: {
     gap: 4,
+  },
+  createMarketButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#111111",
+    borderRadius: 8,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "#222222",
+    borderStyle: "dashed",
+    paddingVertical: 10,
+    marginTop: 6,
+    opacity: 0.5,
+  },
+  createMarketText: {
+    fontFamily: fonts.mono.regular,
+    fontSize: fontSize.xs,
+    color: "#666666",
+    letterSpacing: letterSpacing.wide,
+  },
+  comingSoonBadge: {
+    fontFamily: fonts.mono.regular,
+    fontSize: 9,
+    color: "#444444",
+    backgroundColor: "#1a1a1a",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    overflow: "hidden",
+    textTransform: "uppercase",
+    letterSpacing: letterSpacing.wide,
   },
 });
