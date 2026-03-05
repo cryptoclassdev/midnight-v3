@@ -40,6 +40,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="predict"
+        options={{
+          title: "Predict",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="pulse-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="market"
         options={{
           title: "Market",

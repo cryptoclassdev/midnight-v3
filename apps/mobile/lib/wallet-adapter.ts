@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import bs58 from "bs58";
 import { Buffer } from "buffer";
+import { VersionedTransaction } from "@solana/web3.js";
 import { SOLANA_MWA_CHAIN } from "@/lib/solana";
 
 // Lazy-load MWA to avoid eager TurboModuleRegistry.getEnforcing crash on iOS
@@ -30,6 +31,31 @@ export async function mwaAuthorize(): Promise<string> {
       chain: SOLANA_MWA_CHAIN,
     });
     return base64ToBase58(auth.accounts[0].address);
+  });
+}
+
+/**
+ * Sign and send a transaction via MWA.
+ * Takes a base64-encoded unsigned transaction, opens the wallet,
+ * authorizes, signs + sends, and returns the tx signature as base58.
+ */
+export async function mwaSignAndSend(base64Transaction: string): Promise<string> {
+  const transact = getTransact();
+
+  return transact(async (wallet) => {
+    await wallet.authorize({
+      identity: APP_IDENTITY,
+      chain: SOLANA_MWA_CHAIN,
+    });
+
+    const txBytes = Buffer.from(base64Transaction, "base64");
+    const transaction = VersionedTransaction.deserialize(txBytes);
+
+    const signatures = await wallet.signAndSendTransactions({
+      transactions: [transaction],
+    });
+
+    return bs58.encode(Buffer.from(signatures[0]));
   });
 }
 

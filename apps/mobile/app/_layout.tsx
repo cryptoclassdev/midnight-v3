@@ -70,6 +70,26 @@ export default function RootLayout() {
             animation: "slide_from_bottom",
           }}
         />
+        <Stack.Screen
+          name="predict/event/[id]"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="predict/market/[id]"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="predict/portfolio"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="predict/leaderboard"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="predict/trader/[pubkey]"
+          options={{ animation: "slide_from_right" }}
+        />
       </Stack>
     </QueryClientProvider>
   );

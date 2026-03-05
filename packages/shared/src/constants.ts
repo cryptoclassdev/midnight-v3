@@ -19,3 +19,21 @@ export const CategoryLabel: Record<(typeof CATEGORIES)[number], string> = {
   ai: "AI",
   all: "All",
 };
+
+export const PREDICTION_EVENT_CATEGORIES = [
+  "all", "crypto", "sports", "politics", "esports", "culture", "economics", "tech",
+] as const;
+
+export const PredictionCategoryLabel: Record<
+  (typeof PREDICTION_EVENT_CATEGORIES)[number],
+  string
+> = {
+  all: "All",
+  crypto: "Crypto",
+  sports: "Sports",
+  politics: "Politics",
+  esports: "Esports",
+  culture: "Culture",
+  economics: "Economics",
+  tech: "Tech",
+};
