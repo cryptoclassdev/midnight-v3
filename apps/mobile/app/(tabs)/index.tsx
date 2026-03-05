@@ -3,13 +3,7 @@ import { SwipeFeed } from "@/components/feed/SwipeFeed";
 import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
-
-const CATEGORIES = ["all", "crypto", "ai"] as const;
-const CATEGORY_LABELS: Record<string, string> = {
-  all: "All",
-  crypto: "Crypto",
-  ai: "AI",
-};
+import { CATEGORIES, CategoryLabel } from "@mintfeed/shared";
 
 export default function FeedScreen() {
   const theme = useAppStore((s) => s.theme);
@@ -29,7 +23,7 @@ export default function FeedScreen() {
               onPress={() => setCategory(cat)}
               accessibilityRole="tab"
               accessibilityState={{ selected: isActive }}
-              accessibilityLabel={`${CATEGORY_LABELS[cat]} category`}
+              accessibilityLabel={`${CategoryLabel[cat]} category`}
               hitSlop={8}
               style={[
                 styles.chip,
@@ -51,7 +45,7 @@ export default function FeedScreen() {
                   },
                 ]}
               >
-                {CATEGORY_LABELS[cat]}
+                {CategoryLabel[cat]}
               </Text>
             </Pressable>
           );

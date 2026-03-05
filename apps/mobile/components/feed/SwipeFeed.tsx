@@ -18,6 +18,7 @@ const EMPTY_ARTICLES: Article[] = [];
 export function SwipeFeed() {
   const theme = useAppStore((s) => s.theme);
   const markAsRead = useAppStore((s) => s.markAsRead);
+  const hapticsEnabled = useAppStore((s) => s.hapticsEnabled);
   const themeColors = colors[theme];
   const pagerRef = useRef<PagerView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -40,7 +41,9 @@ export function SwipeFeed() {
       const currentArticles = articlesRef.current;
 
       setCurrentIndex(index);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (hapticsEnabled) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
 
       const article = currentArticles[index];
       if (article) {
@@ -55,7 +58,7 @@ export function SwipeFeed() {
         fetchNextPage();
       }
     },
-    [hasNextPage, isFetchingNextPage, fetchNextPage, markAsRead]
+    [hasNextPage, isFetchingNextPage, fetchNextPage, markAsRead, hapticsEnabled]
   );
 
   if (isLoading) {

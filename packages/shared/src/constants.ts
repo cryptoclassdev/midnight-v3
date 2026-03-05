@@ -12,28 +12,10 @@ export const MARKET_FETCH_INTERVAL_MINUTES = 5;
 
 export const TOP_COINS_COUNT = 20;
 
-export const CATEGORIES = ["crypto", "ai", "all"] as const;
+export const CATEGORIES = ["all", "crypto", "ai"] as const;
 
 export const CategoryLabel: Record<(typeof CATEGORIES)[number], string> = {
   crypto: "Crypto",
   ai: "AI",
   all: "All",
-};
-
-export const PREDICTION_EVENT_CATEGORIES = [
-  "all", "crypto", "sports", "politics", "esports", "culture", "economics", "tech",
-] as const;
-
-export const PredictionCategoryLabel: Record<
-  (typeof PREDICTION_EVENT_CATEGORIES)[number],
-  string
-> = {
-  all: "All",
-  crypto: "Crypto",
-  sports: "Sports",
-  politics: "Politics",
-  esports: "Esports",
-  culture: "Culture",
-  economics: "Economics",
-  tech: "Tech",
 };

@@ -6,12 +6,14 @@ import type { ThemeMode } from "@/constants/theme";
 interface AppState {
   selectedCategory: "all" | "crypto" | "ai";
   theme: ThemeMode;
+  hapticsEnabled: boolean;
   readArticleIds: Record<string, true>;
   walletAddress: string | null;
   walletAuthToken: string | null;
   setCategory: (category: "all" | "crypto" | "ai") => void;
   setTheme: (theme: ThemeMode) => void;
   toggleTheme: () => void;
+  toggleHaptics: () => void;
   markAsRead: (id: string) => void;
   connectWallet: (address: string, authToken: string) => void;
   disconnectWallet: () => void;
@@ -22,6 +24,7 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       selectedCategory: "all",
       theme: "dark",
+      hapticsEnabled: true,
       readArticleIds: {},
       walletAddress: null,
       walletAuthToken: null,
@@ -34,6 +37,9 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           theme: state.theme === "dark" ? "light" : "dark",
         })),
+
+      toggleHaptics: () =>
+        set((state) => ({ hapticsEnabled: !state.hapticsEnabled })),
 
       markAsRead: (id) =>
         set((state) => ({
@@ -51,6 +57,7 @@ export const useAppStore = create<AppState>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         theme: state.theme,
+        hapticsEnabled: state.hapticsEnabled,
         walletAddress: state.walletAddress,
         walletAuthToken: state.walletAuthToken,
         readArticleIds: state.readArticleIds,

@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { api } from "@/lib/api-client";
 import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
-import { fonts, fontSize, letterSpacing } from "@/constants/typography";
+import { fonts, fontSize, lineHeight, letterSpacing } from "@/constants/typography";
 import type { Article, PaginatedResponse } from "@mintfeed/shared";
 
 function findArticleInFeedCache(
@@ -196,14 +196,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: fonts.body.bold,
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: fontSize.xl,
+    lineHeight: lineHeight.xl,
     marginBottom: 16,
   },
   summary: {
     fontFamily: fonts.body.regular,
-    fontSize: 16,
-    lineHeight: 26,
+    fontSize: fontSize.lg,
+    lineHeight: lineHeight.lg,
     marginBottom: 24,
   },
   readMore: {

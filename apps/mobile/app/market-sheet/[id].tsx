@@ -147,7 +147,7 @@ export default function MarketSheet() {
             accessibilityLabel={`Yes at ${yesPercent} percent`}
           >
             <Text style={[styles.probLabel, { color: themeColors.positive }]}>YES</Text>
-            <Text style={[styles.probValue, { color: themeColors.positive }]}>{yesPercent}%</Text>
+            <Text style={[styles.probValue, { color: themeColors.positive }]} maxFontSizeMultiplier={1.3}>{yesPercent}%</Text>
           </Pressable>
           <Pressable
             style={[
@@ -161,7 +161,7 @@ export default function MarketSheet() {
             accessibilityLabel={`No at ${noPercent} percent`}
           >
             <Text style={[styles.probLabel, { color: themeColors.negative }]}>NO</Text>
-            <Text style={[styles.probValue, { color: themeColors.negative }]}>{noPercent}%</Text>
+            <Text style={[styles.probValue, { color: themeColors.negative }]} maxFontSizeMultiplier={1.3}>{noPercent}%</Text>
           </Pressable>
         </View>
 

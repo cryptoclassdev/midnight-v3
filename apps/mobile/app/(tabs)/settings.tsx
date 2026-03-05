@@ -9,6 +9,8 @@ import ProfileView from "@/components/auth/ProfileView";
 export default function ProfileScreen() {
   const theme = useAppStore((s) => s.theme);
   const toggleTheme = useAppStore((s) => s.toggleTheme);
+  const hapticsEnabled = useAppStore((s) => s.hapticsEnabled);
+  const toggleHaptics = useAppStore((s) => s.toggleHaptics);
   const themeColors = colors[theme];
   const walletAddress = useAppStore((s) => s.walletAddress);
 
@@ -45,6 +47,29 @@ export default function ProfileScreen() {
             <Switch
               value={theme === "dark"}
               onValueChange={toggleTheme}
+              trackColor={{
+                false: themeColors.border,
+                true: themeColors.accent,
+              }}
+              thumbColor={themeColors.text}
+            />
+          </View>
+          <View
+            style={[
+              styles.row,
+              {
+                backgroundColor: themeColors.card,
+                borderColor: themeColors.border,
+                marginTop: 8,
+              },
+            ]}
+          >
+            <Text style={[styles.rowLabel, { color: themeColors.text }]}>
+              Haptics
+            </Text>
+            <Switch
+              value={hapticsEnabled}
+              onValueChange={toggleHaptics}
               trackColor={{
                 false: themeColors.border,
                 true: themeColors.accent,

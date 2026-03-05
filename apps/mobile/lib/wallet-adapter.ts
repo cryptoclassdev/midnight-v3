@@ -81,7 +81,6 @@ export async function mwaSignAndSend(
 
   const rawTransaction = signedTx.serialize();
   const txSignature = await solanaConnection.sendRawTransaction(rawTransaction, {
-    skipPreflight: true,
     maxRetries: 3,
   });
 

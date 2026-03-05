@@ -90,11 +90,9 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
   const cleanTitle = stripEmoji(article.title);
   const cleanSummary = stripEmoji(article.summary);
 
-  const markets = (article.predictionMarkets ?? []).filter((m, i, arr) => {
-    const firstById = arr.findIndex((x) => x.id === m.id);
-    const firstByQuestion = arr.findIndex((x) => x.question === m.question);
-    return firstById === i && firstByQuestion === i;
-  });
+  const markets = (article.predictionMarkets ?? []).filter(
+    (m, i, arr) => arr.findIndex((x) => x.id === m.id) === i,
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: themeColors.background }]}>
