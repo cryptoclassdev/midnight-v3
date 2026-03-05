@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { View, StyleSheet, ActivityIndicator, Text, Pressable } from "react-native";
 import PagerView, {
   type PagerViewOnPageSelectedEvent,
@@ -12,6 +12,7 @@ import { NewsCard } from "./NewsCard";
 import type { Article } from "@mintfeed/shared";
 
 const PREFETCH_THRESHOLD = 5;
+const RENDER_WINDOW = 4;
 const EMPTY_ARTICLES: Article[] = [];
 
 export function SwipeFeed() {
@@ -19,6 +20,7 @@ export function SwipeFeed() {
   const markAsRead = useAppStore((s) => s.markAsRead);
   const themeColors = colors[theme];
   const pagerRef = useRef<PagerView>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const query = useFeed();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, refetch } =
@@ -37,6 +39,7 @@ export function SwipeFeed() {
       const index = e.nativeEvent.position;
       const currentArticles = articlesRef.current;
 
+      setCurrentIndex(index);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       const article = currentArticles[index];
@@ -100,11 +103,14 @@ export function SwipeFeed() {
       onPageSelected={onPageSelected}
       accessibilityLabel="News feed, swipe up or down to browse"
     >
-      {articles.map((article) => (
-        <View key={article.id} style={styles.page}>
-          <NewsCard article={article} />
-        </View>
-      ))}
+      {articles.map((article, index) => {
+        const isNearby = Math.abs(index - currentIndex) <= RENDER_WINDOW;
+        return (
+          <View key={article.id} style={styles.page}>
+            {isNearby ? <NewsCard article={article} /> : null}
+          </View>
+        );
+      })}
     </PagerView>
   );
 }

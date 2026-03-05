@@ -10,24 +10,45 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "@/lib/api-client";
 import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
-import type { Article } from "@mintfeed/shared";
+import type { Article, PaginatedResponse } from "@mintfeed/shared";
+
+function findArticleInFeedCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  id: string,
+): Article | undefined {
+  const feedQueries = queryClient.getQueriesData<{ pages: PaginatedResponse<Article>[] }>({
+    queryKey: ["feed"],
+  });
+  for (const [, data] of feedQueries) {
+    if (!data?.pages) continue;
+    for (const page of data.pages) {
+      const match = page.data.find((a) => a.id === id);
+      if (match) return match;
+    }
+  }
+  return undefined;
+}
 
 export default function ArticleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const theme = useAppStore((s) => s.theme);
   const themeColors = colors[theme];
+  const queryClient = useQueryClient();
+
+  const cachedArticle = id ? findArticleInFeedCache(queryClient, id) : undefined;
 
   const { data: article, isLoading } = useQuery({
     queryKey: ["article", id],
     queryFn: () => api.get(`api/v1/feed/${id}`).json<Article>(),
     enabled: !!id,
+    initialData: cachedArticle,
   });
 
   if (isLoading || !article) {
