@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, Linking, useWindowDimensions } from 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
@@ -47,10 +48,16 @@ function detectSentiment(title: string, summary: string): Sentiment {
   return "neutral";
 }
 
-function getAccentColor(sentiment: Sentiment, themeColors: { positive: string; negative: string }): string {
+function getSentimentColor(sentiment: Sentiment, themeColors: { positive: string; negative: string }): string {
   if (sentiment === "positive") return themeColors.positive;
   if (sentiment === "negative") return themeColors.negative;
   return themeColors.positive;
+}
+
+function getCategoryColor(category: string, themeColors: { categoryCrypto: string; categoryAi: string }): string {
+  if (category === "CRYPTO") return themeColors.categoryCrypto;
+  if (category === "AI") return themeColors.categoryAi;
+  return themeColors.categoryCrypto;
 }
 
 const EMOJI_REGEX =
@@ -77,6 +84,8 @@ interface NewsCardProps {
   article: Article;
 }
 
+const MAX_VISIBLE_MARKETS = 4;
+
 export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
   const { height: screenHeight } = useWindowDimensions();
   const { bottom: safeBottom } = useSafeAreaInsets();
@@ -86,7 +95,8 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
   const bottomPadding = TAB_BAR_ESTIMATED_HEIGHT + safeBottom + 16;
 
   const sentiment = detectSentiment(article.title, article.summary);
-  const accentColor = getAccentColor(sentiment, themeColors);
+  const sentimentColor = getSentimentColor(sentiment, themeColors);
+  const categoryColor = getCategoryColor(article.category, themeColors);
   const cleanTitle = stripEmoji(article.title);
   const cleanSummary = stripEmoji(article.summary);
 
@@ -119,8 +129,8 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
         />
 
         {/* Category badge on the image */}
-        <View style={[styles.badge, { borderColor: accentColor, backgroundColor: themeColors.overlayStrong }]}>
-          <Text style={[styles.badgeText, { color: accentColor }]}>
+        <View style={[styles.badge, { borderColor: categoryColor, backgroundColor: themeColors.overlayStrong }]}>
+          <Text style={[styles.badgeText, { color: categoryColor }]}>
             {article.category}
           </Text>
         </View>
@@ -128,8 +138,8 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
 
       {/* Bottom: Content zone */}
       <View style={[styles.contentZone, { paddingBottom: bottomPadding }]}>
-        {/* Decorative accent line */}
-        <View style={[styles.accentLine, { backgroundColor: accentColor }]} />
+        {/* Decorative accent line — sentiment-colored */}
+        <View style={[styles.accentLine, { backgroundColor: sentimentColor }]} />
 
         {/* Title */}
         <Text style={[styles.title, { color: themeColors.text }]}>{cleanTitle}</Text>
@@ -137,9 +147,9 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
         {/* Source + time + read more link */}
         <View style={styles.meta}>
           <Text style={[styles.metaText, { color: themeColors.textMuted }]}>{article.sourceName}</Text>
-          <Text style={[styles.metaDot, { color: accentColor }]}>·</Text>
+          <Text style={[styles.metaDot, { color: sentimentColor }]}>·</Text>
           <Text style={[styles.metaText, { color: themeColors.textMuted }]}>{timeAgo(article.publishedAt)}</Text>
-          <Text style={[styles.metaDot, { color: accentColor }]}>·</Text>
+          <Text style={[styles.metaDot, { color: sentimentColor }]}>·</Text>
           <Pressable
             onPress={() => Linking.openURL(article.sourceUrl)}
             hitSlop={12}
@@ -147,7 +157,7 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
             accessibilityLabel={`Read full article from ${article.sourceName}`}
             style={styles.sourceLinkTouchable}
           >
-            <Text style={[styles.sourceLink, { color: accentColor }]}>
+            <Text style={[styles.sourceLink, { color: sentimentColor }]}>
               Read full article
             </Text>
           </Pressable>
@@ -156,12 +166,29 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
         {/* Summary */}
         <Text style={[styles.summary, { color: themeColors.textSecondary }]}>{cleanSummary}</Text>
 
-        {/* Prediction markets (up to 3) */}
+        {/* Prediction markets */}
         {markets.length > 0 ? (
-          <View style={styles.marketsContainer}>
-            {markets.map((market) => (
-              <PredictionCard key={market.id} market={market} />
-            ))}
+          <View style={styles.marketsSection}>
+            <View style={styles.marketsHeader}>
+              <Ionicons
+                name="pulse-outline"
+                size={12}
+                color={themeColors.accentMint}
+              />
+              <Text style={[styles.marketsLabel, { color: themeColors.accentMint }]}>
+                RELATED MARKETS
+              </Text>
+            </View>
+            <View style={styles.marketsStack}>
+              {markets.slice(0, MAX_VISIBLE_MARKETS).map((market) => (
+                <PredictionCard key={market.id} market={market} />
+              ))}
+              {markets.length > MAX_VISIBLE_MARKETS && (
+                <Text style={[styles.moreLinkText, { color: themeColors.textMuted, textAlign: "right", paddingVertical: 2 }]}>
+                  +{markets.length - MAX_VISIBLE_MARKETS} more
+                </Text>
+              )}
+            </View>
           </View>
         ) : (
           <Pressable
@@ -236,25 +263,25 @@ const styles = StyleSheet.create({
     width: 32,
     height: 3,
     borderRadius: 2,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   title: {
     fontFamily: fonts.body.bold,
     fontSize: 22,
     lineHeight: 30,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   summary: {
     fontFamily: fonts.body.regular,
     fontSize: 15,
     lineHeight: 24,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   meta: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   metaText: {
     fontFamily: fonts.mono.regular,
@@ -277,8 +304,27 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
     textTransform: "uppercase",
   },
-  marketsContainer: {
-    gap: 4,
+  marketsSection: {
+    gap: 6,
+    marginTop: 4,
+  },
+  marketsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  marketsLabel: {
+    fontFamily: fonts.mono.bold,
+    fontSize: 9,
+    letterSpacing: letterSpacing.wider,
+  },
+  marketsStack: {
+    gap: 6,
+  },
+  moreLinkText: {
+    fontFamily: fonts.mono.regular,
+    fontSize: 10,
+    letterSpacing: letterSpacing.wide,
   },
   createMarketButton: {
     flexDirection: "row",
