@@ -5,6 +5,12 @@ import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import { CATEGORIES, CategoryLabel } from "@mintfeed/shared";
 
+const CHIP_ACCENT: Record<(typeof CATEGORIES)[number], keyof typeof colors.dark> = {
+  all: "accent",
+  crypto: "accent",
+  ai: "accent",
+};
+
 export default function FeedScreen() {
   const theme = useAppStore((s) => s.theme);
   const selectedCategory = useAppStore((s) => s.selectedCategory);
@@ -17,6 +23,7 @@ export default function FeedScreen() {
       <View style={styles.categoryBar} accessibilityRole="tablist">
         {CATEGORIES.map((cat) => {
           const isActive = selectedCategory === cat;
+          const chipColor = themeColors[CHIP_ACCENT[cat]];
           return (
             <Pressable
               key={cat}
@@ -29,7 +36,7 @@ export default function FeedScreen() {
                 styles.chip,
                 {
                   borderColor: isActive
-                    ? themeColors.accent
+                    ? chipColor
                     : themeColors.border,
                   backgroundColor: isActive
                     ? themeColors.overlay
@@ -41,7 +48,7 @@ export default function FeedScreen() {
                 style={[
                   styles.chipText,
                   {
-                    color: isActive ? themeColors.accent : themeColors.textMuted,
+                    color: isActive ? chipColor : themeColors.textMuted,
                   },
                 ]}
               >
@@ -69,16 +76,20 @@ const styles = StyleSheet.create({
   },
   chip: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingTop: 7,
+    paddingBottom: 7,
     minHeight: 36,
     borderRadius: 12,
     borderCurve: "continuous",
     borderWidth: 1,
+    justifyContent: "center",
   },
   chipText: {
     fontFamily: fonts.mono.regular,
     fontSize: fontSize.xxs,
     textTransform: "uppercase",
     letterSpacing: letterSpacing.wide,
+    includeFontPadding: false,
+    textAlignVertical: "center",
   },
 });

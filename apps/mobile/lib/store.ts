@@ -10,6 +10,7 @@ interface AppState {
   readArticleIds: Record<string, true>;
   walletAddress: string | null;
   walletAuthToken: string | null;
+  hasCompletedOnboarding: boolean;
   setCategory: (category: "all" | "crypto" | "ai") => void;
   setTheme: (theme: ThemeMode) => void;
   toggleTheme: () => void;
@@ -17,6 +18,7 @@ interface AppState {
   markAsRead: (id: string) => void;
   connectWallet: (address: string, authToken: string) => void;
   disconnectWallet: () => void;
+  completeOnboarding: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -28,6 +30,7 @@ export const useAppStore = create<AppState>()(
       readArticleIds: {},
       walletAddress: null,
       walletAuthToken: null,
+      hasCompletedOnboarding: false,
 
       setCategory: (category) => set({ selectedCategory: category }),
 
@@ -51,6 +54,8 @@ export const useAppStore = create<AppState>()(
 
       disconnectWallet: () =>
         set({ walletAddress: null, walletAuthToken: null }),
+
+      completeOnboarding: () => set({ hasCompletedOnboarding: true }),
     }),
     {
       name: "mintfeed-app-store",
@@ -61,6 +66,7 @@ export const useAppStore = create<AppState>()(
         walletAddress: state.walletAddress,
         walletAuthToken: state.walletAuthToken,
         readArticleIds: state.readArticleIds,
+        hasCompletedOnboarding: state.hasCompletedOnboarding,
       }),
     },
   ),

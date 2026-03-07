@@ -15,8 +15,9 @@ function getTransact() {
 }
 
 const APP_IDENTITY = {
-  name: "MintFeed",
+  name: "Midnight",
   uri: "https://mintfeed.app",
+  icon: "favicon.ico",
 } as const;
 
 /**

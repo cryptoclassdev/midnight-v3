@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import ky from "ky";
+import ky, { HTTPError } from "ky";
 
 const JUPITER_API_URL = "https://api.jup.ag/prediction/v1";
 
@@ -10,42 +10,17 @@ const jupiter = ky.create({
   retry: { limit: 1 },
 });
 
+async function forwardJupiterError(err: unknown, c: any) {
+  if (err instanceof HTTPError) {
+    const status = err.response.status;
+    const body = await err.response.json().catch(() => ({ message: err.message }));
+    console.error("[Jupiter]", status, body);
+    return c.json(body, status);
+  }
+  throw err;
+}
+
 export const predictionRoutes = new Hono();
-
-// --- Events ---
-
-predictionRoutes.get("/predictions/events", async (c) => {
-  const params = Object.fromEntries(new URL(c.req.url).searchParams);
-  const data = await jupiter.get("events", { searchParams: params }).json();
-  return c.json(data);
-});
-
-predictionRoutes.get("/predictions/events/search", async (c) => {
-  const params = Object.fromEntries(new URL(c.req.url).searchParams);
-  const data = await jupiter.get("events/search", { searchParams: params }).json();
-  return c.json(data);
-});
-
-predictionRoutes.get("/predictions/events/suggested/:pubkey", async (c) => {
-  const { pubkey } = c.req.param();
-  const params = Object.fromEntries(new URL(c.req.url).searchParams);
-  const data = await jupiter.get(`events/suggested/${pubkey}`, { searchParams: params }).json();
-  return c.json(data);
-});
-
-predictionRoutes.get("/predictions/events/:eventId/markets", async (c) => {
-  const { eventId } = c.req.param();
-  const params = Object.fromEntries(new URL(c.req.url).searchParams);
-  const data = await jupiter.get(`events/${eventId}/markets`, { searchParams: params }).json();
-  return c.json(data);
-});
-
-predictionRoutes.get("/predictions/events/:eventId", async (c) => {
-  const { eventId } = c.req.param();
-  const params = Object.fromEntries(new URL(c.req.url).searchParams);
-  const data = await jupiter.get(`events/${eventId}`, { searchParams: params }).json();
-  return c.json(data);
-});
 
 // --- Markets ---
 
@@ -72,8 +47,23 @@ predictionRoutes.get("/predictions/trading-status", async (c) => {
 
 predictionRoutes.post("/predictions/orders", async (c) => {
   const body = await c.req.json();
-  const data = await jupiter.post("orders", { json: body }).json();
-  return c.json(data);
+  console.log("[Orders] Request body:", JSON.stringify(body, null, 2));
+  try {
+    const data = await jupiter.post("orders", { json: body }).json();
+    console.log("[Orders] Jupiter response:", JSON.stringify(data, null, 2));
+    return c.json(data);
+  } catch (err: any) {
+    const raw = await err?.response?.text?.().catch(() => null);
+    console.error("[Orders] Jupiter raw error:", err?.response?.status, raw);
+    // Re-read body for forwarding since .text() consumed it — parse from raw
+    try {
+      const parsed = JSON.parse(raw ?? "{}");
+      console.error("[Orders] Jupiter parsed error:", parsed);
+      return c.json(parsed, err?.response?.status ?? 500);
+    } catch {
+      return forwardJupiterError(err, c);
+    }
+  }
 });
 
 predictionRoutes.get("/predictions/orders", async (c) => {
@@ -82,29 +72,11 @@ predictionRoutes.get("/predictions/orders", async (c) => {
   return c.json(data);
 });
 
-predictionRoutes.get("/predictions/orders/status/:orderPubkey", async (c) => {
-  const { orderPubkey } = c.req.param();
-  const data = await jupiter.get(`orders/status/${orderPubkey}`).json();
-  return c.json(data);
-});
-
-predictionRoutes.get("/predictions/orders/:orderPubkey", async (c) => {
-  const { orderPubkey } = c.req.param();
-  const data = await jupiter.get(`orders/${orderPubkey}`).json();
-  return c.json(data);
-});
-
 // --- Positions ---
 
 predictionRoutes.get("/predictions/positions", async (c) => {
   const params = Object.fromEntries(new URL(c.req.url).searchParams);
   const data = await jupiter.get("positions", { searchParams: params }).json();
-  return c.json(data);
-});
-
-predictionRoutes.get("/predictions/positions/:positionPubkey", async (c) => {
-  const { positionPubkey } = c.req.param();
-  const data = await jupiter.get(`positions/${positionPubkey}`).json();
   return c.json(data);
 });
 
@@ -128,76 +100,7 @@ predictionRoutes.post("/predictions/positions/:positionPubkey/claim", async (c) 
   return c.json(data);
 });
 
-// --- History ---
-
-predictionRoutes.get("/predictions/history", async (c) => {
-  const params = Object.fromEntries(new URL(c.req.url).searchParams);
-  const data = await jupiter.get("history", { searchParams: params }).json();
-  return c.json(data);
-});
-
-// --- Profiles ---
-
-predictionRoutes.get("/predictions/profiles/:ownerPubkey/pnl-history", async (c) => {
-  const { ownerPubkey } = c.req.param();
-  const params = Object.fromEntries(new URL(c.req.url).searchParams);
-  const data = await jupiter.get(`profiles/${ownerPubkey}/pnl-history`, { searchParams: params }).json();
-  return c.json(data);
-});
-
-predictionRoutes.get("/predictions/profiles/:ownerPubkey", async (c) => {
-  const { ownerPubkey } = c.req.param();
-  const data = await jupiter.get(`profiles/${ownerPubkey}`).json();
-  return c.json(data);
-});
-
-// --- Trades & Leaderboards ---
-
-predictionRoutes.get("/predictions/trades", async (c) => {
-  const data = await jupiter.get("trades").json();
-  return c.json(data);
-});
-
-predictionRoutes.get("/predictions/leaderboards", async (c) => {
-  const params = Object.fromEntries(new URL(c.req.url).searchParams);
-  const data = await jupiter.get("leaderboards", { searchParams: params }).json();
-  return c.json(data);
-});
-
-// --- Social (Follow) ---
-
-predictionRoutes.post("/predictions/follow/:pubkey", async (c) => {
-  const { pubkey } = c.req.param();
-  const data = await jupiter.post(`follow/${pubkey}`).json();
-  return c.json(data);
-});
-
-predictionRoutes.delete("/predictions/unfollow/:pubkey", async (c) => {
-  const { pubkey } = c.req.param();
-  const data = await jupiter.delete(`unfollow/${pubkey}`).json();
-  return c.json(data);
-});
-
-predictionRoutes.get("/predictions/followers/:pubkey", async (c) => {
-  const { pubkey } = c.req.param();
-  const data = await jupiter.get(`followers/${pubkey}`).json();
-  return c.json(data);
-});
-
-predictionRoutes.get("/predictions/following/:pubkey", async (c) => {
-  const { pubkey } = c.req.param();
-  const data = await jupiter.get(`following/${pubkey}`).json();
-  return c.json(data);
-});
-
-// --- Vault ---
-
-predictionRoutes.get("/predictions/vault-info", async (c) => {
-  const data = await jupiter.get("vault-info").json();
-  return c.json(data);
-});
-
-// --- Live prices (existing, kept) ---
+// --- Live prices (for inline article cards) ---
 
 predictionRoutes.get("/predictions/live", async (c) => {
   const idsParam = c.req.query("ids") ?? "";

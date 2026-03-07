@@ -3,7 +3,6 @@ import { View, StyleSheet, ActivityIndicator, Text, Pressable } from "react-nati
 import PagerView, {
   type PagerViewOnPageSelectedEvent,
 } from "react-native-pager-view";
-import * as Haptics from "expo-haptics";
 import { useFeed } from "@/hooks/useFeed";
 import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
@@ -18,7 +17,6 @@ const EMPTY_ARTICLES: Article[] = [];
 export function SwipeFeed() {
   const theme = useAppStore((s) => s.theme);
   const markAsRead = useAppStore((s) => s.markAsRead);
-  const hapticsEnabled = useAppStore((s) => s.hapticsEnabled);
   const themeColors = colors[theme];
   const pagerRef = useRef<PagerView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -27,10 +25,16 @@ export function SwipeFeed() {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, refetch } =
     query;
 
-  const articles = useMemo(
-    () => data?.pages.flatMap((page) => page.data) ?? EMPTY_ARTICLES,
-    [data?.pages]
-  );
+  const articles = useMemo(() => {
+    const all = data?.pages.flatMap((page) => page.data) ?? EMPTY_ARTICLES;
+    const seen = new Set<string>();
+    return all.filter((article) => {
+      const key = article.title.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [data?.pages]);
 
   const articlesRef = useRef(articles);
   articlesRef.current = articles;
@@ -41,9 +45,6 @@ export function SwipeFeed() {
       const currentArticles = articlesRef.current;
 
       setCurrentIndex(index);
-      if (hapticsEnabled) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
 
       const article = currentArticles[index];
       if (article) {
@@ -58,7 +59,7 @@ export function SwipeFeed() {
         fetchNextPage();
       }
     },
-    [hasNextPage, isFetchingNextPage, fetchNextPage, markAsRead, hapticsEnabled]
+    [hasNextPage, isFetchingNextPage, fetchNextPage, markAsRead]
   );
 
   if (isLoading) {

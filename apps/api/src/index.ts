@@ -51,7 +51,7 @@ app.route("/api/v1", predictionRoutes);
 
 const PORT = Number(process.env.PORT) || 3000;
 
-console.log(`Starting MintFeed API on port ${PORT}`);
+console.log(`Starting Midnight API on port ${PORT}`);
 
 startCronJobs();
 

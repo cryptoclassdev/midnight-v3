@@ -4,9 +4,28 @@ import { fetchAllFeeds, type ParsedFeedItem } from "./rss-fetcher.service";
 import { rewriteArticle } from "./gemini.service";
 import { generateBlurhash } from "./image.service";
 import { matchMarketForArticle } from "./jupiter-prediction.service";
+import { ARTICLE_SUMMARY_WORD_LIMIT } from "@mintfeed/shared";
+
+function truncateToWordLimit(text: string, limit: number = ARTICLE_SUMMARY_WORD_LIMIT): string {
+  const words = text.split(/\s+/);
+  if (words.length <= limit) return text;
+  return words.slice(0, limit).join(" ");
+}
 
 function hashUrl(url: string): string {
   return createHash("sha256").update(url).digest("hex");
+}
+
+function normalizeTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function hashTitle(title: string): string {
+  return createHash("sha256").update(normalizeTitle(title)).digest("hex");
 }
 
 async function processItem(item: ParsedFeedItem): Promise<void> {
@@ -19,6 +38,15 @@ async function processItem(item: ParsedFeedItem): Promise<void> {
 
   if (exists) return;
 
+  // Check for duplicate titles from different sources (same story, different outlet)
+  const titleHash = hashTitle(item.title);
+  const titleDuplicate = await prisma.article.findFirst({
+    where: { titleHash },
+    select: { id: true },
+  });
+
+  if (titleDuplicate) return;
+
   const { title, summary } = await rewriteArticle(item.title, item.content);
   const imageBlurhash = item.imageUrl
     ? await generateBlurhash(item.imageUrl)
@@ -28,12 +56,13 @@ async function processItem(item: ParsedFeedItem): Promise<void> {
     data: {
       sourceUrl: item.link,
       sourceUrlHash,
+      titleHash: hashTitle(title),
       sourceName: item.sourceName,
       category: item.category,
       originalTitle: item.title,
       originalBody: item.content,
       title,
-      summary,
+      summary: truncateToWordLimit(summary, 60),
       imageUrl: item.imageUrl,
       imageBlurhash,
       publishedAt: new Date(item.pubDate),

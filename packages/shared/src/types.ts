@@ -57,11 +57,6 @@ export interface FeedQueryParams {
 
 // --- Jupiter Prediction Markets (Trading) ---
 
-export const PREDICTION_CATEGORIES = [
-  "all", "crypto", "sports", "politics", "esports", "culture", "economics", "tech",
-] as const;
-export type PredictionCategory = (typeof PREDICTION_CATEGORIES)[number];
-
 export const MICRO_USD = 1_000_000;
 export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
@@ -85,27 +80,8 @@ export interface JupiterPaginatedResponse<T> {
   pagination: JupiterPagination;
 }
 
-export interface PredictionEventMetadata {
-  title: string;
-  imageUrl: string | null;
-  closeTime: string | null;
-  rulesPdf?: string;
-}
-
-export interface PredictionEvent {
-  eventId: string;
-  isActive: boolean;
-  isLive: boolean;
-  category: string | null;
-  subcategory: string | null;
-  volumeUsd: string; // micro-USD as string
-  metadata: PredictionEventMetadata;
-  markets?: PredictionMarketDetail[];
-  beginAt?: string;
-}
-
 export interface PredictionMarketPricing {
-  buyYesPriceUsd: number;  // micro-USD
+  buyYesPriceUsd: number;
   buyNoPriceUsd: number;
   sellYesPriceUsd: number;
   sellNoPriceUsd: number;
@@ -145,7 +121,7 @@ export interface CreateOrderRequest {
 }
 
 export interface CreateOrderResponse {
-  transaction: string; // base64-encoded unsigned tx
+  transaction: string;
   txMeta: {
     blockhash: string;
     lastValidBlockHeight: number;
@@ -190,73 +166,6 @@ export interface PredictionOrder {
   status: string;
 }
 
-export interface PredictionOrderStatus {
-  pubkey: string;
-  status: string;
-  events: Array<{
-    type: string;
-    timestamp: string;
-    details: Record<string, unknown>;
-  }>;
-}
-
-export interface PredictionProfile {
-  ownerPubkey: string;
-  realizedPnl: string;
-  volume: string;
-  predictionsCount: number;
-  winRate: number;
-  portfolioValue: string;
-}
-
-export interface PnLHistoryEntry {
-  timestamp: string;
-  realizedPnl: string;
-}
-
-export interface PredictionTrade {
-  id: string;
-  traderPubkey: string;
-  marketId: string;
-  action: "buy" | "sell";
-  side: "yes" | "no";
-  price: string;
-  amountUsd: string;
-  timestamp: string;
-  market?: { title: string };
-}
-
-export interface LeaderboardEntry {
-  rank: number;
-  ownerPubkey: string;
-  pnl: string;
-  volume: string;
-  winRate: number;
-  predictionsCount: number;
-}
-
-export interface LeaderboardResponse {
-  data: LeaderboardEntry[];
-  summary: Record<string, unknown>;
-}
-
-export interface HistoryEvent {
-  id: number;
-  type: string;
-  positionPubkey: string;
-  ownerPubkey: string;
-  details: Record<string, unknown>;
-  timestamp: string;
-}
-
 export interface TradingStatus {
   trading_active: boolean;
-}
-
-export interface FollowUser {
-  pubkey: string;
-}
-
-export interface FollowListResponse {
-  data: FollowUser[];
 }

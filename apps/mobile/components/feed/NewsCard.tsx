@@ -67,6 +67,14 @@ function stripEmoji(text: string): string {
   return text.replace(EMOJI_REGEX, "").replace(/\s{2,}/g, " ").trim();
 }
 
+const SUMMARY_WORD_LIMIT = 60;
+
+function truncateSummary(text: string): string {
+  const words = text.split(/\s+/);
+  if (words.length <= SUMMARY_WORD_LIMIT) return text;
+  return words.slice(0, SUMMARY_WORD_LIMIT).join(" ") + "...";
+}
+
 function timeAgo(dateString: string): string {
   const seconds = Math.floor(
     (Date.now() - new Date(dateString).getTime()) / 1000
@@ -84,7 +92,7 @@ interface NewsCardProps {
   article: Article;
 }
 
-const MAX_VISIBLE_MARKETS = 4;
+const MAX_VISIBLE_MARKETS = 3;
 
 export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
   const { height: screenHeight } = useWindowDimensions();
@@ -98,7 +106,7 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
   const sentimentColor = getSentimentColor(sentiment, themeColors);
   const categoryColor = getCategoryColor(article.category, themeColors);
   const cleanTitle = stripEmoji(article.title);
-  const cleanSummary = stripEmoji(article.summary);
+  const cleanSummary = truncateSummary(stripEmoji(article.summary));
 
   const markets = (article.predictionMarkets ?? []).filter(
     (m, i, arr) => arr.findIndex((x) => x.id === m.id) === i,
@@ -147,9 +155,9 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
         {/* Source + time + read more link */}
         <View style={styles.meta}>
           <Text style={[styles.metaText, { color: themeColors.textMuted }]}>{article.sourceName}</Text>
-          <Text style={[styles.metaDot, { color: sentimentColor }]}>·</Text>
+          <Text style={[styles.metaDot, { color: themeColors.textMuted }]}>·</Text>
           <Text style={[styles.metaText, { color: themeColors.textMuted }]}>{timeAgo(article.publishedAt)}</Text>
-          <Text style={[styles.metaDot, { color: sentimentColor }]}>·</Text>
+          <Text style={[styles.metaDot, { color: themeColors.textMuted }]}>·</Text>
           <Pressable
             onPress={() => Linking.openURL(article.sourceUrl)}
             hitSlop={12}
@@ -157,7 +165,7 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
             accessibilityLabel={`Read full article from ${article.sourceName}`}
             style={styles.sourceLinkTouchable}
           >
-            <Text style={[styles.sourceLink, { color: sentimentColor }]}>
+            <Text style={[styles.sourceLink, { color: themeColors.accent }]}>
               Read full article
             </Text>
           </Pressable>

@@ -17,6 +17,7 @@ import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
+import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,6 +32,7 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const theme = useAppStore((s) => s.theme);
+  const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);
   const themeColors = colors[theme];
 
   const [fontsLoaded] = useFonts({
@@ -41,6 +43,9 @@ export default function RootLayout() {
     Inter_700Bold,
     JetBrainsMono_400Regular,
     JetBrainsMono_700Bold,
+    "BlauerNue-Regular": require("@/assets/fonts/BlauerNue-Regular.ttf"),
+    "BlauerNue-Bold": require("@/assets/fonts/BlauerNue-Bold.ttf"),
+    "BlauerNue-ExtraBold": require("@/assets/fonts/BlauerNue-ExtraBold.ttf"),
   });
 
   useEffect(() => {
@@ -51,6 +56,15 @@ export default function RootLayout() {
 
   if (!fontsLoaded) {
     return null;
+  }
+
+  if (!hasCompletedOnboarding) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <StatusBar style={theme === "dark" ? "light" : "dark"} />
+        <OnboardingFlow />
+      </QueryClientProvider>
+    );
   }
 
   return (
@@ -71,24 +85,11 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
-          name="predict/event/[id]"
-          options={{ animation: "slide_from_right" }}
-        />
-        <Stack.Screen
-          name="predict/market/[id]"
-          options={{ animation: "slide_from_right" }}
-        />
-        <Stack.Screen
-          name="predict/portfolio"
-          options={{ animation: "slide_from_right" }}
-        />
-        <Stack.Screen
-          name="predict/leaderboard"
-          options={{ animation: "slide_from_right" }}
-        />
-        <Stack.Screen
-          name="predict/trader/[pubkey]"
-          options={{ animation: "slide_from_right" }}
+          name="market-sheet/[id]"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+          }}
         />
       </Stack>
     </QueryClientProvider>

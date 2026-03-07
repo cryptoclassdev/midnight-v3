@@ -5,7 +5,7 @@ import type { Category } from "@mintfeed/db";
 const parser = new Parser({
   timeout: 10_000,
   headers: {
-    "User-Agent": "MintFeed/1.0",
+    "User-Agent": "Midnight/1.0",
   },
 });
 
@@ -45,15 +45,23 @@ export async function fetchAllFeeds(): Promise<ParsedFeedItem[]> {
     try {
       const feed = await parser.parseURL(source.url);
 
-      const items: ParsedFeedItem[] = (feed.items ?? []).map((item) => ({
-        title: item.title ?? "Untitled",
-        link: item.link ?? "",
-        content: item.contentSnippet ?? item.content ?? "",
-        pubDate: item.pubDate ?? new Date().toISOString(),
-        imageUrl: extractImageUrl(item),
-        sourceName: source.name,
-        category: source.category,
-      }));
+      const items: ParsedFeedItem[] = (feed.items ?? [])
+        .filter((item) => {
+          // Filter out non-English Cointelegraph links (es.cointelegraph.com, etc.)
+          if (item.link && /^https?:\/\/[a-z]{2}\.cointelegraph\./i.test(item.link)) {
+            return false;
+          }
+          return true;
+        })
+        .map((item) => ({
+          title: item.title ?? "Untitled",
+          link: item.link ?? "",
+          content: item.contentSnippet ?? item.content ?? "",
+          pubDate: item.pubDate ?? new Date().toISOString(),
+          imageUrl: extractImageUrl(item),
+          sourceName: source.name,
+          category: source.category,
+        }));
 
       await prisma.feedSource.update({
         where: { id: source.id },

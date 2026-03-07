@@ -21,7 +21,7 @@ import { useCreateOrder } from "@/hooks/usePredictionTrading";
 import { microToUsd, usdToMicro, USDC_MINT } from "@mintfeed/shared";
 
 export default function MarketSheet() {
-  const { id: marketId } = useLocalSearchParams<{ id: string }>();
+  const { id: marketId, question } = useLocalSearchParams<{ id: string; question?: string }>();
   const router = useRouter();
   const theme = useAppStore((s) => s.theme);
   const walletAddress = useAppStore((s) => s.walletAddress);
@@ -104,7 +104,7 @@ export default function MarketSheet() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={themeColors.accentMint} />
+          <ActivityIndicator size="large" color={themeColors.accent} />
         </View>
       </SafeAreaView>
     );
@@ -126,8 +126,8 @@ export default function MarketSheet() {
         >
           <Ionicons name="close" size={24} color={themeColors.text} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: themeColors.text }]} numberOfLines={1}>
-          {market?.metadata.title ?? "Market"}
+        <Text style={[styles.headerTitle, { color: themeColors.text }]} numberOfLines={2}>
+          {market?.metadata.title ?? question ?? "Market"}
         </Text>
         <View style={{ width: 24 }} />
       </View>
@@ -170,6 +170,28 @@ export default function MarketSheet() {
           <View style={[styles.fullBarYes, { flex: yesPercent || 1, backgroundColor: themeColors.positive }]} />
           <View style={[styles.fullBarNo, { flex: noPercent || 1, backgroundColor: themeColors.negative }]} />
         </View>
+
+        {/* Resolution date + Volume */}
+        {market && (
+          <View style={styles.metaRow}>
+            {market.closeTime > 0 && (
+              <View style={styles.metaItem}>
+                <Ionicons name="calendar-outline" size={12} color={themeColors.textMuted} />
+                <Text style={[styles.metaText, { color: themeColors.textMuted }]}>
+                  Resolves {new Date(market.closeTime * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </Text>
+              </View>
+            )}
+            {market.pricing.volume > 0 && (
+              <View style={styles.metaItem}>
+                <Ionicons name="bar-chart-outline" size={12} color={themeColors.textMuted} />
+                <Text style={[styles.metaText, { color: themeColors.textMuted }]}>
+                  Vol ${(microToUsd(market.pricing.volume)).toFixed(0)}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Orderbook */}
         {orderbookRows.length > 0 && (
@@ -329,6 +351,23 @@ const styles = StyleSheet.create({
   },
   fullBarYes: {},
   fullBarNo: {},
+
+  // Meta row (resolution date, volume)
+  metaRow: {
+    flexDirection: "row",
+    gap: 16,
+    marginBottom: 20,
+  },
+  metaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  metaText: {
+    fontFamily: fonts.mono.regular,
+    fontSize: fontSize.xxs,
+    letterSpacing: letterSpacing.wide,
+  },
 
   // Orderbook
   orderbookSection: {

@@ -12,6 +12,11 @@ export const fonts = {
     regular: "JetBrainsMono_400Regular",
     bold: "JetBrainsMono_700Bold",
   },
+  brand: {
+    regular: "BlauerNue-Regular",
+    bold: "BlauerNue-Bold",
+    extraBold: "BlauerNue-ExtraBold",
+  },
 } as const;
 
 export const fontSize = {

@@ -6,6 +6,7 @@ import { useMarket } from "@/hooks/useMarket";
 import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
+import { FearGreedCard } from "@/components/market/FearGreedCard";
 import type { MarketCoin } from "@mintfeed/shared";
 
 const priceFormatter = new Intl.NumberFormat("en-US", {
@@ -43,6 +44,8 @@ interface CoinRowProps {
   mutedColor: string;
   positiveColor: string;
   negativeColor: string;
+  positiveTint: string;
+  negativeTint: string;
 }
 
 const CoinRow = memo(function CoinRow({
@@ -53,6 +56,8 @@ const CoinRow = memo(function CoinRow({
   mutedColor,
   positiveColor,
   negativeColor,
+  positiveTint,
+  negativeTint,
 }: CoinRowProps) {
   const isPositive = item.priceChange24h >= 0;
 
@@ -80,17 +85,22 @@ const CoinRow = memo(function CoinRow({
         <Text style={[styles.price, { color: textColor }]}>
           {formatPrice(item.currentPrice)}
         </Text>
-        <Text
+        <View
           style={[
-            styles.change,
-            {
-              color: isPositive ? positiveColor : negativeColor,
-            },
+            styles.changeBadge,
+            { backgroundColor: isPositive ? positiveTint : negativeTint },
           ]}
         >
-          {isPositive ? "+" : ""}
-          {item.priceChange24h.toFixed(2)}%
-        </Text>
+          <Text
+            style={[
+              styles.change,
+              { color: isPositive ? positiveColor : negativeColor },
+            ]}
+          >
+            {isPositive ? "+" : ""}
+            {item.priceChange24h.toFixed(2)}%
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -115,9 +125,11 @@ export default function MarketScreen() {
         mutedColor={themeColors.textMuted}
         positiveColor={themeColors.positive}
         negativeColor={themeColors.negative}
+        positiveTint={themeColors.positiveTint}
+        negativeTint={themeColors.negativeTint}
       />
     ),
-    [themeColors.border, themeColors.text, themeColors.textMuted, themeColors.positive, themeColors.negative]
+    [themeColors.border, themeColors.text, themeColors.textMuted, themeColors.positive, themeColors.negative, themeColors.positiveTint, themeColors.negativeTint]
   );
 
   return (
@@ -127,9 +139,12 @@ export default function MarketScreen() {
     >
       <View style={styles.header}>
         <Text style={[styles.title, { color: themeColors.text }]} accessibilityRole="header">Market</Text>
-        <Text style={[styles.subtitle, { color: themeColors.accent }]}>
-          Live
-        </Text>
+        <View style={styles.liveIndicator}>
+          <View style={[styles.liveDot, { backgroundColor: themeColors.positive }]} />
+          <Text style={[styles.subtitle, { color: themeColors.positive }]}>
+            Live
+          </Text>
+        </View>
       </View>
       <FlatList
         data={data?.data ?? EMPTY_COINS}
@@ -138,6 +153,7 @@ export default function MarketScreen() {
         onRefresh={refetch}
         refreshing={isLoading}
         contentContainerStyle={styles.list}
+        ListHeaderComponent={FearGreedCard}
         ListEmptyComponent={
           !isLoading ? (
             <View style={styles.emptyState}>
@@ -174,7 +190,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   title: {
-    fontFamily: fonts.display.regular,
+    fontFamily: fonts.brand.extraBold,
     fontSize: fontSize.xxl,
   },
   subtitle: {
@@ -224,10 +240,26 @@ const styles = StyleSheet.create({
     fontFamily: fonts.mono.bold,
     fontSize: fontSize.base,
   },
+  changeBadge: {
+    marginTop: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderCurve: "continuous",
+  },
   change: {
     fontFamily: fonts.mono.regular,
     fontSize: fontSize.sm,
-    marginTop: 2,
+  },
+  liveIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   emptyState: {
     flex: 1,

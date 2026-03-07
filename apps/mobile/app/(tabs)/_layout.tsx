@@ -1,27 +1,64 @@
-import { Tabs } from "expo-router";
+import { useRef, useCallback } from "react";
+import { Tabs, usePathname, useRouter } from "expo-router";
+import { View, StyleSheet } from "react-native";
+import { Gesture, GestureDetector, Directions } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
 import { fonts } from "@/constants/typography";
 
+const TAB_ORDER = ["/", "/market", "/settings"] as const;
+
 export default function TabLayout() {
   const theme = useAppStore((s) => s.theme);
   const themeColors = colors[theme];
+  const router = useRouter();
+  const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
+
+  const navigateTab = useCallback(
+    (direction: "left" | "right") => {
+      const current = pathnameRef.current;
+      const idx = TAB_ORDER.indexOf(current as (typeof TAB_ORDER)[number]);
+      if (idx === -1) return;
+      const next = direction === "right" ? idx + 1 : idx - 1;
+      if (next < 0 || next >= TAB_ORDER.length) return;
+      router.navigate(TAB_ORDER[next] as any);
+    },
+    [router],
+  );
+
+  const flingLeft = Gesture.Fling()
+    .direction(Directions.LEFT)
+    .onEnd(() => navigateTab("right"))
+    .runOnJS(true);
+
+  const flingRight = Gesture.Fling()
+    .direction(Directions.RIGHT)
+    .onEnd(() => navigateTab("left"))
+    .runOnJS(true);
+
+  const composedGesture = Gesture.Race(flingLeft, flingRight);
 
   return (
+    <GestureDetector gesture={composedGesture}>
+    <View style={{ flex: 1 }}>
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: themeColors.accent,
-        tabBarInactiveTintColor: themeColors.textMuted,
+        tabBarInactiveTintColor: theme === "light" ? "#555555" : themeColors.textMuted,
         tabBarStyle: {
-          backgroundColor: "transparent",
-          borderTopWidth: 1,
+          backgroundColor: themeColors.background,
+          borderTopWidth: 0.5,
           borderTopColor: themeColors.border,
           position: "absolute",
           elevation: 0,
         },
-        tabBarBackground: () => null,
+        tabBarBackground: () => (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: themeColors.background }]} />
+        ),
         tabBarLabelStyle: {
           fontFamily: fonts.mono.regular,
           fontSize: 10,
@@ -58,5 +95,7 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </View>
+    </GestureDetector>
   );
 }

@@ -17,6 +17,7 @@ model Article {
   id                 String                    @id @default(cuid())
   sourceUrl          String                    @unique
   sourceUrlHash      String                    @unique
+  titleHash          String?
   sourceName         String
   category           Category
   originalTitle      String
@@ -33,6 +34,7 @@ model Article {
 
   @@index([category, publishedAt(sort: Desc)])
   @@index([publishedAt(sort: Desc)])
+  @@index([titleHash])
 }
 
 model MarketCoin {

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { useAppStore } from "@/lib/store";
@@ -20,7 +21,9 @@ function parsePrices(raw: unknown): Record<string, number> {
   return result;
 }
 
-export function PredictionCard({ market }: PredictionCardProps) {
+export const PredictionCard = memo(function PredictionCard({
+  market,
+}: PredictionCardProps) {
   const router = useRouter();
   const theme = useAppStore((s) => s.theme);
   const themeColors = colors[theme];
@@ -32,89 +35,177 @@ export function PredictionCard({ market }: PredictionCardProps) {
       : market.outcomePrices,
   );
 
-  const entries = Object.entries(prices).filter(([, p]) => p > 0);
-  const leadingOutcome = entries.reduce(
-    (best, [outcome, price]) => (price > best.price ? { outcome, price } : best),
-    { outcome: "", price: 0 },
-  );
-  const hasValidOdds = leadingOutcome.price > 0;
-  const percentage = Math.round(leadingOutcome.price * 100);
+  const yesPrice = prices["Yes"] ?? 0;
+  const noPrice = prices["No"] ?? 0;
+  const yesPercent = Math.round(yesPrice * 100);
+  const noPercent = Math.round(noPrice * 100);
+  const hasOdds = yesPrice > 0 || noPrice > 0;
+  const isResolved = yesPrice >= 0.99 || noPrice >= 0.99;
+  const winnerSide = yesPrice >= 0.99 ? "YES" : "NO";
+
+  if (isResolved) {
+    return (
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: themeColors.card,
+            borderColor: themeColors.cardBorder,
+            opacity: 0.6,
+          },
+        ]}
+        accessibilityLabel={`${market.question}, Resolved: ${winnerSide} won`}
+      >
+        <View
+          style={[styles.accentStripe, { backgroundColor: themeColors.textMuted }]}
+        />
+        <View style={styles.content}>
+          <Text
+            style={[styles.question, { color: themeColors.textMuted }]}
+            numberOfLines={1}
+          >
+            {market.question}
+          </Text>
+          <View style={styles.oddsRow}>
+            <Text style={[styles.resolvedBadge, { color: themeColors.textMuted, backgroundColor: themeColors.trackBg }]}>
+              RESOLVED
+            </Text>
+            <Text style={[styles.sideText, { color: themeColors.textSecondary }]}>
+              {winnerSide} won
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <Pressable
       style={({ pressed }) => [
-        styles.container,
-        { backgroundColor: themeColors.card },
-        pressed && { opacity: 0.7 },
+        styles.card,
+        {
+          backgroundColor: themeColors.card,
+          borderColor: themeColors.cardBorder,
+        },
+        pressed && styles.cardPressed,
       ]}
-      onPress={() => router.push(`/market-sheet/${market.id}`)}
+      onPress={() => router.push({
+        pathname: `/market-sheet/${market.id}`,
+        params: { question: market.question },
+      })}
       accessibilityRole="button"
-      accessibilityLabel={`${market.question}, ${hasValidOdds ? `${leadingOutcome.outcome} at ${percentage} percent` : "no odds yet"}`}
+      accessibilityLabel={`${market.question}, Yes at ${yesPercent} percent, No at ${noPercent} percent`}
       accessibilityHint="Opens prediction market details"
     >
-      {/* Question */}
-      <Text style={[styles.question, { color: themeColors.textSecondary }]} numberOfLines={2}>
-        {market.question}
-      </Text>
+      {/* Mint accent stripe */}
+      <View
+        style={[styles.accentStripe, { backgroundColor: themeColors.accentMint }]}
+      />
 
-      {/* Probability bar + outcome label */}
-      {hasValidOdds && (
-        <View style={styles.barRow}>
-          <View style={[styles.barTrack, { backgroundColor: themeColors.trackBg }]}>
-            <View style={[styles.barFill, { width: `${percentage}%`, backgroundColor: themeColors.accentMint }]} />
+      <View style={styles.content}>
+        {/* Question */}
+        <Text
+          style={[styles.question, { color: themeColors.textSecondary }]}
+          numberOfLines={1}
+        >
+          {market.question}
+        </Text>
+
+        {/* YES price | bar | NO price */}
+        {hasOdds && (
+          <View style={styles.oddsRow}>
+            <Text style={[styles.sideText, { color: themeColors.positive }]}>
+              YES {yesPercent}¢
+            </Text>
+            <View style={[styles.barTrack, { backgroundColor: themeColors.trackBg }]}>
+              <View
+                style={[
+                  styles.barYes,
+                  {
+                    flex: yesPercent || 1,
+                    backgroundColor: themeColors.positive,
+                  },
+                ]}
+              />
+              <View
+                style={[
+                  styles.barNo,
+                  {
+                    flex: noPercent || 1,
+                    backgroundColor: themeColors.negative,
+                  },
+                ]}
+              />
+            </View>
+            <Text style={[styles.sideText, { color: themeColors.negative, textAlign: "right" }]}>
+              NO {noPercent}¢
+            </Text>
           </View>
-          <Text style={[styles.odds, { color: themeColors.accentMint }]}>
-            {leadingOutcome.outcome} {percentage}%
-          </Text>
-        </View>
-      )}
-
-      {/* Tap hint */}
-      <Text style={[styles.tapHint, { color: themeColors.textFaint }]}>Tap to bet</Text>
+        )}
+      </View>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "column",
+  card: {
+    flexDirection: "row",
     borderRadius: 8,
     borderCurve: "continuous",
+    borderWidth: 0.5,
+    overflow: "hidden",
+  },
+  cardPressed: {
+    opacity: 0.7,
+  },
+  accentStripe: {
+    width: 3,
+  },
+  content: {
+    flex: 1,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    marginTop: 6,
     gap: 6,
   },
   question: {
     fontFamily: fonts.body.regular,
-    fontSize: 12.5,
-    lineHeight: 17,
+    fontSize: 12,
+    lineHeight: 16,
   },
-  barRow: {
+  oddsRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
+  sideText: {
+    fontFamily: fonts.mono.bold,
+    fontSize: 10,
+    letterSpacing: letterSpacing.wide,
+    minWidth: 46,
+  },
   barTrack: {
     flex: 1,
-    height: 3,
+    height: 4,
     borderRadius: 2,
     overflow: "hidden",
+    flexDirection: "row",
+    gap: 1,
   },
-  barFill: {
+  barYes: {
     height: "100%",
     borderRadius: 2,
   },
-  odds: {
-    fontFamily: fonts.mono.regular,
-    fontSize: fontSize.xs,
-    letterSpacing: letterSpacing.wide,
+  barNo: {
+    height: "100%",
+    borderRadius: 2,
   },
-  tapHint: {
-    fontFamily: fonts.mono.regular,
+  resolvedBadge: {
+    fontFamily: fonts.mono.bold,
     fontSize: 9,
     letterSpacing: letterSpacing.wide,
-    textTransform: "uppercase",
-    textAlign: "right",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    overflow: "hidden",
   },
 });

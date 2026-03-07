@@ -19,7 +19,7 @@ export default function ProfileScreen() {
       style={[styles.container, { backgroundColor: themeColors.background }]}
       edges={["top"]}
     >
-      <ScrollView>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={[styles.title, { color: themeColors.text }]}>
           Profile
         </Text>
@@ -27,11 +27,14 @@ export default function ProfileScreen() {
         {walletAddress ? <ProfileView /> : <LoginScreen />}
 
         <View style={styles.section}>
-          <Text
-            style={[styles.sectionTitle, { color: themeColors.textMuted }]}
-          >
-            APPEARANCE
-          </Text>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionAccent, { backgroundColor: themeColors.accent }]} />
+            <Text
+              style={[styles.sectionTitle, { color: themeColors.textSecondary }]}
+            >
+              APPEARANCE
+            </Text>
+          </View>
           <View
             style={[
               styles.row,
@@ -80,11 +83,14 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text
-            style={[styles.sectionTitle, { color: themeColors.textMuted }]}
-          >
-            ABOUT
-          </Text>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionAccent, { backgroundColor: themeColors.accentMint }]} />
+            <Text
+              style={[styles.sectionTitle, { color: themeColors.textSecondary }]}
+            >
+              ABOUT
+            </Text>
+          </View>
           <View
             style={[
               styles.row,
@@ -113,8 +119,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: 100,
+  },
   title: {
-    fontFamily: fonts.display.regular,
+    fontFamily: fonts.brand.extraBold,
     fontSize: fontSize.xxl,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -123,11 +132,21 @@ const styles = StyleSheet.create({
     marginTop: 24,
     paddingHorizontal: 16,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  sectionAccent: {
+    width: 3,
+    height: 12,
+    borderRadius: 2,
+  },
   sectionTitle: {
-    fontFamily: fonts.mono.bold,
+    fontFamily: fonts.brand.bold,
     fontSize: fontSize.xxs,
     letterSpacing: letterSpacing.wider,
-    marginBottom: 8,
     textTransform: "uppercase",
   },
   row: {
@@ -140,7 +159,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
   },
   rowLabel: {
-    fontFamily: fonts.body.semiBold,
+    fontFamily: fonts.brand.regular,
     fontSize: fontSize.base,
   },
   rowValue: {
