@@ -25,18 +25,25 @@ export default function ProfileView() {
   const positions = positionsData?.data ?? [];
   const orders = ordersData?.data ?? [];
 
+  const openPositions = positions.filter(
+    (p) => !p.market?.status || p.market.status === "open",
+  );
+  const closedPositions = positions.filter(
+    (p) => p.market?.status === "closed" || p.market?.status === "cancelled",
+  );
+
   const displayName = walletAddress
     ? formatSolanaAddress(walletAddress)
     : "User";
 
-  const totalValue = positions.reduce(
+  const totalValue = openPositions.reduce(
     (sum, p) => sum + microToUsd(p.costBasisUsd) + microToUsd(p.pnlUsd),
     0,
   );
-  const totalPnl = positions.reduce((sum, p) => sum + microToUsd(p.pnlUsd), 0);
-  const hasPositions = positions.length > 0;
-  const hasOrders = orders.length > 0;
-  const [showOrders, setShowOrders] = useState(false);
+  const totalPnl = openPositions.reduce((sum, p) => sum + microToUsd(p.pnlUsd), 0);
+  const hasPositions = openPositions.length > 0;
+  const hasHistory = orders.length > 0 || closedPositions.length > 0;
+  const [showHistory, setShowHistory] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -128,7 +135,7 @@ export default function ProfileView() {
                 ACTIVE
               </Text>
               <Text style={[styles.summaryValue, { color: themeColors.text }]}>
-                {positions.length}
+                {openPositions.length}
               </Text>
             </View>
           </View>
@@ -169,41 +176,41 @@ export default function ProfileView() {
         )}
 
         <View style={styles.positionsList}>
-          {positions.map((position) => (
+          {openPositions.map((position) => (
             <PositionCard key={position.pubkey} position={position} />
           ))}
         </View>
       </View>
 
-      {/* Order History Section — collapsed by default */}
+      {/* History Section — collapsed by default */}
       <View style={styles.section}>
         <Pressable
           style={styles.sectionToggle}
-          onPress={() => setShowOrders((prev) => !prev)}
+          onPress={() => setShowHistory((prev) => !prev)}
           accessibilityRole="button"
-          accessibilityLabel={showOrders ? "Hide order history" : "Show order history"}
+          accessibilityLabel={showHistory ? "Hide history" : "Show history"}
         >
           <Text
             style={[styles.sectionTitle, { color: themeColors.textMuted, marginBottom: 0 }]}
           >
-            ORDER HISTORY{hasOrders ? ` (${orders.length})` : ""}
+            HISTORY{hasHistory ? ` (${orders.length + closedPositions.length})` : ""}
           </Text>
           <Ionicons
-            name={showOrders ? "chevron-up" : "chevron-down"}
+            name={showHistory ? "chevron-up" : "chevron-down"}
             size={14}
             color={themeColors.textMuted}
           />
         </Pressable>
 
-        {showOrders && (
+        {showHistory && (
           <>
-            {ordersLoading && (
+            {(ordersLoading || positionsLoading) && (
               <View style={styles.loadingRow}>
                 <ActivityIndicator size="small" color={themeColors.accent} />
               </View>
             )}
 
-            {!ordersLoading && !hasOrders && (
+            {!ordersLoading && !positionsLoading && !hasHistory && (
               <View
                 style={[
                   styles.emptyState,
@@ -221,11 +228,21 @@ export default function ProfileView() {
               </View>
             )}
 
-            <View style={styles.ordersList}>
-              {orders.map((order) => (
-                <OrderRow key={order.pubkey} order={order} />
-              ))}
-            </View>
+            {closedPositions.length > 0 && (
+              <View style={styles.positionsList}>
+                {closedPositions.map((position) => (
+                  <PositionCard key={position.pubkey} position={position} />
+                ))}
+              </View>
+            )}
+
+            {orders.length > 0 && (
+              <View style={[styles.ordersList, closedPositions.length > 0 && { marginTop: 10 }]}>
+                {orders.map((order) => (
+                  <OrderRow key={order.pubkey} order={order} />
+                ))}
+              </View>
+            )}
           </>
         )}
       </View>

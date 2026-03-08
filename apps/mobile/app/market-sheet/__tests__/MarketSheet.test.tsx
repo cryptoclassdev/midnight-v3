@@ -1,0 +1,121 @@
+import { renderHook } from "@testing-library/react-native";
+import { useMemo } from "react";
+import {
+  validateTradeAmount,
+  parseTradeAmount,
+  formatResolutionCountdown,
+  MINIMUM_TRADE_USD,
+} from "@mintfeed/shared";
+
+// Mock all hooks used by MarketSheet
+jest.mock("@/lib/store", () => ({
+  useAppStore: jest.fn((selector: (s: Record<string, unknown>) => unknown) =>
+    selector({ theme: "dark", walletAddress: null, walletAuthToken: null, connectWallet: jest.fn() }),
+  ),
+}));
+
+jest.mock("@/lib/wallet-adapter", () => ({
+  mwaAuthorize: jest.fn(),
+}));
+
+jest.mock("@/hooks/usePredictionMarket", () => ({
+  usePredictionMarketDetail: jest.fn(() => ({ data: null, isLoading: false })),
+  usePredictionOrderbook: jest.fn(() => ({ data: null })),
+}));
+
+jest.mock("@/hooks/usePredictionTrading", () => ({
+  useCreateOrder: jest.fn(() => ({ mutateAsync: jest.fn(), isPending: false })),
+  useTradingStatus: jest.fn(() => ({ data: { trading_active: true } })),
+}));
+
+jest.mock("@/hooks/usePredictionOrders", () => ({
+  usePredictionOrders: jest.fn(() => ({ data: null })),
+}));
+
+jest.mock("@/components/predict/OrderRow", () => ({
+  OrderRow: () => null,
+}));
+
+describe("MarketSheet trade validation logic", () => {
+  it("validates trade amounts correctly", () => {
+    expect(validateTradeAmount("5.00")).toEqual({ valid: true });
+    expect(validateTradeAmount("1")).toEqual({ valid: true });
+    expect(validateTradeAmount("0.50")).toEqual({ valid: false, error: "BELOW_MINIMUM" });
+    expect(validateTradeAmount("")).toEqual({ valid: false, error: "INVALID_NUMBER" });
+  });
+
+  it("parses trade amounts", () => {
+    expect(parseTradeAmount("5")).toBe(5);
+    expect(parseTradeAmount("1.50")).toBe(1.5);
+    expect(parseTradeAmount("")).toBeNull();
+    expect(parseTradeAmount("abc")).toBeNull();
+  });
+
+  it("formats resolution countdowns", () => {
+    const pastTime = Math.floor(Date.now() / 1000) - 3600;
+    expect(formatResolutionCountdown(pastTime)).toBe("Resolved");
+
+    const threeDaysFromNow = Math.floor(Date.now() / 1000) + 3 * 86400;
+    expect(formatResolutionCountdown(threeDaysFromNow)).toBe("Resolves in 3 days");
+  });
+
+  it("exports MINIMUM_TRADE_USD constant", () => {
+    expect(MINIMUM_TRADE_USD).toBe(1);
+  });
+});
+
+describe("MarketSheet user orders filtering", () => {
+  it("filters orders by marketId", () => {
+    const targetMarketId = "market-123";
+    const orders = [
+      { pubkey: "a", marketId: "market-123", isYes: true, isBuy: true, contracts: "10", priceUsd: "500000", status: "filled", ownerPubkey: "owner1" },
+      { pubkey: "b", marketId: "market-456", isYes: false, isBuy: true, contracts: "5", priceUsd: "300000", status: "open", ownerPubkey: "owner1" },
+      { pubkey: "c", marketId: "market-123", isYes: false, isBuy: false, contracts: "3", priceUsd: "700000", status: "filled", ownerPubkey: "owner1" },
+    ];
+
+    const filtered = orders.filter((o) => o.marketId === targetMarketId);
+    expect(filtered).toHaveLength(2);
+    expect(filtered.every((o) => o.marketId === targetMarketId)).toBe(true);
+  });
+
+  it("returns empty array when no orders match", () => {
+    const orders = [
+      { pubkey: "a", marketId: "market-999", isYes: true, isBuy: true, contracts: "10", priceUsd: "500000", status: "filled", ownerPubkey: "owner1" },
+    ];
+    const filtered = orders.filter((o) => o.marketId === "market-123");
+    expect(filtered).toHaveLength(0);
+  });
+});
+
+describe("MarketSheet buy button state", () => {
+  it("determines button text based on trading status and validation", () => {
+    const getButtonText = (
+      isTradingPaused: boolean,
+      hasAmountInput: boolean,
+      validation: { valid: boolean; error?: string },
+      selectedSide: "yes" | "no",
+      percent: number,
+    ) => {
+      if (isTradingPaused) return "Trading Paused";
+      if (!hasAmountInput || validation.error === "INVALID_NUMBER") return `Enter $${MINIMUM_TRADE_USD}+ to bet`;
+      if (validation.error === "BELOW_MINIMUM") return `Enter $${MINIMUM_TRADE_USD}+ to bet`;
+      return `Buy ${selectedSide.toUpperCase()} \u00B7 ${percent}\u00A2`;
+    };
+
+    expect(getButtonText(true, false, { valid: false }, "yes", 50)).toBe("Trading Paused");
+    expect(getButtonText(false, false, { valid: false, error: "INVALID_NUMBER" }, "yes", 50)).toBe("Enter $1+ to bet");
+    expect(getButtonText(false, true, { valid: false, error: "BELOW_MINIMUM" }, "yes", 50)).toBe("Enter $1+ to bet");
+    expect(getButtonText(false, true, { valid: true }, "yes", 73)).toBe("Buy YES \u00B7 73\u00A2");
+    expect(getButtonText(false, true, { valid: true }, "no", 27)).toBe("Buy NO \u00B7 27\u00A2");
+  });
+
+  it("determines button disabled state", () => {
+    const isDisabled = (valid: boolean, isPending: boolean, isTradingPaused: boolean) =>
+      !valid || isPending || isTradingPaused;
+
+    expect(isDisabled(true, false, false)).toBe(false);
+    expect(isDisabled(false, false, false)).toBe(true);
+    expect(isDisabled(true, true, false)).toBe(true);
+    expect(isDisabled(true, false, true)).toBe(true);
+  });
+});

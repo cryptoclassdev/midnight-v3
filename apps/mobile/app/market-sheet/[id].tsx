@@ -17,8 +17,24 @@ import { mwaAuthorize } from "@/lib/wallet-adapter";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import { usePredictionMarketDetail, usePredictionOrderbook } from "@/hooks/usePredictionMarket";
-import { useCreateOrder } from "@/hooks/usePredictionTrading";
-import { microToUsd, usdToMicro, USDC_MINT } from "@mintfeed/shared";
+import { useCreateOrder, useTradingStatus } from "@/hooks/usePredictionTrading";
+import { usePredictionOrders } from "@/hooks/usePredictionOrders";
+import { OrderRow } from "@/components/predict/OrderRow";
+import {
+  microToUsd,
+  usdToMicro,
+  USDC_MINT,
+  validateTradeAmount,
+  parseTradeAmount,
+  formatResolutionCountdown,
+  MINIMUM_TRADE_USD,
+} from "@mintfeed/shared";
+
+const STATUS_COLORS = {
+  open: "#00ff66",
+  closed: "#E60000",
+  cancelled: "#888888",
+} as const;
 
 export default function MarketSheet() {
   const { id: marketId, question } = useLocalSearchParams<{ id: string; question?: string }>();
@@ -31,6 +47,8 @@ export default function MarketSheet() {
   const { data: market, isLoading: marketLoading } = usePredictionMarketDetail(marketId);
   const { data: orderbook } = usePredictionOrderbook(marketId);
   const createOrder = useCreateOrder();
+  const { data: tradingStatus } = useTradingStatus();
+  const { data: ordersData } = usePredictionOrders(walletAddress ?? undefined);
 
   const [selectedSide, setSelectedSide] = useState<"yes" | "no">("yes");
   const [amount, setAmount] = useState("");
@@ -40,13 +58,20 @@ export default function MarketSheet() {
   const yesPercent = Math.round(yesPrice * 100);
   const noPercent = Math.round(noPrice * 100);
 
+  const tradeValidation = useMemo(() => validateTradeAmount(amount), [amount]);
+
   const estimatedShares = useMemo(() => {
-    const usd = parseFloat(amount);
+    const usd = parseTradeAmount(amount);
     if (!usd || usd <= 0) return 0;
     const price = selectedSide === "yes" ? yesPrice : noPrice;
     if (price <= 0) return 0;
     return Math.floor(usd / price);
   }, [amount, selectedSide, yesPrice, noPrice]);
+
+  const userOrders = useMemo(() => {
+    if (!ordersData?.data || !marketId) return [];
+    return ordersData.data.filter((o) => o.marketId === marketId);
+  }, [ordersData, marketId]);
 
   const handleConnectWallet = useCallback(async () => {
     try {
@@ -59,12 +84,16 @@ export default function MarketSheet() {
 
   const handlePlaceBet = useCallback(async () => {
     if (!walletAddress || !marketId) return;
-    const usd = parseFloat(amount);
-    if (!usd || usd <= 0) {
-      Alert.alert("Invalid amount", "Enter an amount to bet.");
+    const validation = validateTradeAmount(amount);
+    if (!validation.valid) {
+      const msg = validation.error === "BELOW_MINIMUM"
+        ? `Minimum bet: $${MINIMUM_TRADE_USD.toFixed(2)}`
+        : "Enter a valid amount.";
+      Alert.alert("Invalid amount", msg);
       return;
     }
 
+    const usd = parseTradeAmount(amount)!;
     try {
       await createOrder.mutateAsync({
         ownerPubkey: walletAddress,
@@ -100,6 +129,23 @@ export default function MarketSheet() {
     return rows;
   }, [orderbook]);
 
+  const isTradingPaused = tradingStatus?.trading_active === false;
+  const hasAmountInput = amount.length > 0;
+  const isAmountInvalid = hasAmountInput && !tradeValidation.valid;
+
+  const buyButtonDisabled = !tradeValidation.valid || createOrder.isPending || isTradingPaused;
+
+  const buyButtonText = useMemo(() => {
+    if (isTradingPaused) return "Trading Paused";
+    if (!hasAmountInput || tradeValidation.error === "INVALID_NUMBER") {
+      return `Enter $${MINIMUM_TRADE_USD}+ to bet`;
+    }
+    if (tradeValidation.error === "BELOW_MINIMUM") {
+      return `Enter $${MINIMUM_TRADE_USD}+ to bet`;
+    }
+    return `Buy ${selectedSide.toUpperCase()} \u00B7 ${selectedSide === "yes" ? yesPercent : noPercent}\u00A2`;
+  }, [isTradingPaused, hasAmountInput, tradeValidation, selectedSide, yesPercent, noPercent]);
+
   if (marketLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
@@ -110,12 +156,16 @@ export default function MarketSheet() {
     );
   }
 
+  const marketTitle = market?.metadata.title ?? question ?? "Market";
+  const marketStatus = market?.status ?? "open";
+  const statusColor = STATUS_COLORS[marketStatus] ?? STATUS_COLORS.open;
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: themeColors.background }]}
       edges={["top", "bottom"]}
     >
-      {/* Header */}
+      {/* Header — close button only */}
       <View style={styles.header}>
         <Pressable
           onPress={() => router.back()}
@@ -126,13 +176,29 @@ export default function MarketSheet() {
         >
           <Ionicons name="close" size={24} color={themeColors.text} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: themeColors.text }]} numberOfLines={2}>
-          {market?.metadata.title ?? question ?? "Market"}
-        </Text>
-        <View style={{ width: 24 }} />
+        <View style={{ flex: 1 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Large headline + status badge */}
+        <View style={styles.titleSection}>
+          <Text style={[styles.marketTitle, { color: themeColors.text }]}>
+            {marketTitle}
+          </Text>
+          <View style={[styles.statusBadge, { backgroundColor: statusColor + "20" }]}>
+            <Text style={[styles.statusBadgeText, { color: statusColor }]}>
+              {marketStatus.toUpperCase()}
+            </Text>
+          </View>
+        </View>
+
+        {/* Rules section */}
+        {market?.metadata.rulesPrimary ? (
+          <Text style={[styles.rulesText, { color: themeColors.textSecondary }]}>
+            {market.metadata.rulesPrimary}
+          </Text>
+        ) : null}
+
         {/* YES / NO probabilities */}
         <View style={styles.probRow}>
           <Pressable
@@ -171,22 +237,32 @@ export default function MarketSheet() {
           <View style={[styles.fullBarNo, { flex: noPercent || 1, backgroundColor: themeColors.negative }]} />
         </View>
 
-        {/* Resolution date + Volume */}
+        {/* Resolution countdown + Volume */}
         {market && (
-          <View style={styles.metaRow}>
+          <View style={styles.metaSection}>
             {market.closeTime > 0 && (
-              <View style={styles.metaItem}>
-                <Ionicons name="calendar-outline" size={12} color={themeColors.textMuted} />
-                <Text style={[styles.metaText, { color: themeColors.textMuted }]}>
-                  Resolves {new Date(market.closeTime * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              <View style={styles.metaCard}>
+                <Ionicons name="time-outline" size={14} color={themeColors.textMuted} />
+                <Text style={[styles.metaCountdown, { color: themeColors.text }]}>
+                  {formatResolutionCountdown(market.closeTime)}
+                </Text>
+                <Text style={[styles.metaDate, { color: themeColors.textMuted }]}>
+                  {new Date(market.closeTime * 1000).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
                 </Text>
               </View>
             )}
             {market.pricing.volume > 0 && (
-              <View style={styles.metaItem}>
-                <Ionicons name="bar-chart-outline" size={12} color={themeColors.textMuted} />
-                <Text style={[styles.metaText, { color: themeColors.textMuted }]}>
-                  Vol ${(microToUsd(market.pricing.volume)).toFixed(0)}
+              <View style={styles.metaCard}>
+                <Ionicons name="bar-chart-outline" size={14} color={themeColors.textMuted} />
+                <Text style={[styles.metaVolume, { color: themeColors.text }]}>
+                  ${microToUsd(market.pricing.volume).toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                </Text>
+                <Text style={[styles.metaDate, { color: themeColors.textMuted }]}>
+                  VOLUME
                 </Text>
               </View>
             )}
@@ -215,15 +291,45 @@ export default function MarketSheet() {
             ))}
           </View>
         )}
+
+        {/* User's previous orders */}
+        <View style={[styles.ordersSection, { backgroundColor: themeColors.card }]}>
+          <Text style={[styles.sectionTitle, { color: themeColors.textMuted }]}>YOUR TRADES</Text>
+          {userOrders.length > 0 ? (
+            <View style={styles.ordersList}>
+              {userOrders.map((order) => (
+                <OrderRow key={order.pubkey} order={order} />
+              ))}
+            </View>
+          ) : (
+            <Text style={[styles.emptyText, { color: themeColors.textFaint }]}>
+              No previous trades
+            </Text>
+          )}
+        </View>
       </ScrollView>
 
       {/* Trade section — pinned to bottom */}
       <View style={[styles.tradeSection, { borderTopColor: themeColors.border }]}>
         {walletAddress ? (
           <>
+            {/* Trading paused banner */}
+            {isTradingPaused && (
+              <View style={[styles.pausedBanner, { backgroundColor: themeColors.negative + "18" }]}>
+                <Ionicons name="pause-circle" size={14} color={themeColors.negative} />
+                <Text style={[styles.pausedText, { color: themeColors.negative }]}>
+                  Trading is currently paused
+                </Text>
+              </View>
+            )}
+
             <View style={styles.tradeRow}>
               <View
-                style={[styles.amountInput, { borderColor: themeColors.border, backgroundColor: themeColors.card }]}
+                style={[
+                  styles.amountInput,
+                  { borderColor: themeColors.border, backgroundColor: themeColors.card },
+                  isAmountInvalid && { borderColor: themeColors.negative },
+                ]}
               >
                 <Text style={[styles.dollarSign, { color: themeColors.textMuted }]}>$</Text>
                 <TextInput
@@ -238,6 +344,18 @@ export default function MarketSheet() {
               </View>
             </View>
 
+            {/* Validation error */}
+            {isAmountInvalid && tradeValidation.error === "BELOW_MINIMUM" && (
+              <Text style={[styles.errorText, { color: themeColors.negative }]}>
+                Minimum bet: ${MINIMUM_TRADE_USD.toFixed(2)}
+              </Text>
+            )}
+
+            {/* Persistent hint */}
+            <Text style={[styles.hintText, { color: themeColors.textMuted }]}>
+              Min. bet: ${MINIMUM_TRADE_USD.toFixed(2)} USDC
+            </Text>
+
             {estimatedShares > 0 && (
               <Text style={[styles.estimate, { color: themeColors.textMuted }]}>
                 ~{estimatedShares} shares · Payout if correct: ${estimatedShares.toFixed(2)}
@@ -249,11 +367,11 @@ export default function MarketSheet() {
                 styles.betButton,
                 {
                   backgroundColor: selectedSide === "yes" ? themeColors.positive : themeColors.negative,
-                  opacity: createOrder.isPending || !amount ? 0.5 : 1,
+                  opacity: buyButtonDisabled ? 0.5 : 1,
                 },
               ]}
               onPress={handlePlaceBet}
-              disabled={createOrder.isPending || !amount}
+              disabled={buyButtonDisabled}
               accessibilityRole="button"
               accessibilityLabel={`Buy ${selectedSide} at ${selectedSide === "yes" ? yesPercent : noPercent} cents`}
             >
@@ -261,7 +379,7 @@ export default function MarketSheet() {
                 <ActivityIndicator size="small" color={themeColors.background} />
               ) : (
                 <Text style={[styles.betButtonText, { color: themeColors.background }]}>
-                  Buy {selectedSide.toUpperCase()} · {selectedSide === "yes" ? yesPercent : noPercent}¢
+                  {buyButtonText}
                 </Text>
               )}
             </Pressable>
@@ -291,29 +409,52 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
   headerButton: {
     minWidth: 44,
     minHeight: 44,
     alignItems: "center" as const,
     justifyContent: "center" as const,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    flex: 1,
-    fontFamily: fonts.body.bold,
-    fontSize: fontSize.base,
-    textAlign: "center",
-    marginHorizontal: 12,
-  },
   scrollContent: {
     paddingHorizontal: 16,
     paddingBottom: 16,
+  },
+
+  // Title + status
+  titleSection: {
+    marginBottom: 16,
+    gap: 10,
+  },
+  marketTitle: {
+    fontFamily: fonts.display.regular,
+    fontSize: fontSize.xl,
+    lineHeight: 30,
+  },
+  statusBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    borderCurve: "continuous",
+  },
+  statusBadgeText: {
+    fontFamily: fonts.mono.bold,
+    fontSize: 9,
+    letterSpacing: letterSpacing.wide,
+  },
+
+  // Rules
+  rulesText: {
+    fontFamily: fonts.body.regular,
+    fontSize: fontSize.base,
+    lineHeight: 20,
+    marginBottom: 20,
   },
 
   // Probability cards
@@ -352,18 +493,28 @@ const styles = StyleSheet.create({
   fullBarYes: {},
   fullBarNo: {},
 
-  // Meta row (resolution date, volume)
-  metaRow: {
+  // Meta section (resolution + volume)
+  metaSection: {
     flexDirection: "row",
-    gap: 16,
+    gap: 12,
     marginBottom: 20,
   },
-  metaItem: {
-    flexDirection: "row",
+  metaCard: {
+    flex: 1,
     alignItems: "center",
     gap: 4,
   },
-  metaText: {
+  metaCountdown: {
+    fontFamily: fonts.mono.bold,
+    fontSize: fontSize.sm,
+    letterSpacing: letterSpacing.wide,
+  },
+  metaVolume: {
+    fontFamily: fonts.mono.bold,
+    fontSize: fontSize.base,
+    letterSpacing: letterSpacing.wide,
+  },
+  metaDate: {
     fontFamily: fonts.mono.regular,
     fontSize: fontSize.xxs,
     letterSpacing: letterSpacing.wide,
@@ -409,12 +560,43 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
+  // User orders section
+  ordersSection: {
+    borderRadius: 12,
+    borderCurve: "continuous",
+    padding: 12,
+    marginBottom: 16,
+  },
+  ordersList: {
+    gap: 8,
+  },
+  emptyText: {
+    fontFamily: fonts.mono.regular,
+    fontSize: fontSize.xs,
+    textAlign: "center",
+    paddingVertical: 12,
+  },
+
   // Trade section
   tradeSection: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: 1,
     gap: 8,
+  },
+  pausedBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderCurve: "continuous",
+  },
+  pausedText: {
+    fontFamily: fonts.mono.regular,
+    fontSize: fontSize.xs,
+    letterSpacing: letterSpacing.wide,
   },
   tradeRow: {
     flexDirection: "row",
@@ -445,6 +627,14 @@ const styles = StyleSheet.create({
     fontFamily: fonts.mono.regular,
     fontSize: fontSize.xxs,
     letterSpacing: letterSpacing.wide,
+  },
+  errorText: {
+    fontFamily: fonts.mono.regular,
+    fontSize: fontSize.xs,
+  },
+  hintText: {
+    fontFamily: fonts.mono.regular,
+    fontSize: fontSize.xxs,
   },
   estimate: {
     fontFamily: fonts.mono.regular,

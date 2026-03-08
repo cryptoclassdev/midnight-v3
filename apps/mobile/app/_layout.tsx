@@ -15,6 +15,7 @@ import {
 } from "@expo-google-fonts/jetbrains-mono";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
@@ -68,30 +69,32 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <StatusBar style={theme === "dark" ? "light" : "dark"} />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: themeColors.background },
-        }}
-      >
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="article/[id]"
-          options={{
-            presentation: "modal",
-            animation: "slide_from_bottom",
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <StatusBar style={theme === "dark" ? "light" : "dark"} />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: themeColors.background },
           }}
-        />
-        <Stack.Screen
-          name="market-sheet/[id]"
-          options={{
-            presentation: "modal",
-            animation: "slide_from_bottom",
-          }}
-        />
-      </Stack>
-    </QueryClientProvider>
+        >
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="article/[id]"
+            options={{
+              presentation: "modal",
+              animation: "slide_from_bottom",
+            }}
+          />
+          <Stack.Screen
+            name="market-sheet/[id]"
+            options={{
+              presentation: "modal",
+              animation: "slide_from_bottom",
+            }}
+          />
+        </Stack>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }

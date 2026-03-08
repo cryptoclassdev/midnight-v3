@@ -135,7 +135,9 @@ export async function matchMarketForArticle(
         if (seenQuestions.has(question)) continue;
 
         const pricing = market.pricing;
-        if (!pricing || pricing.volume < MIN_VOLUME_USD) continue;
+        // Skip non-binary markets (must have both yes and no prices > 0)
+        if (!pricing || pricing.buyYesPriceUsd <= 0 || pricing.buyNoPriceUsd <= 0) continue;
+        if (pricing.volume < MIN_VOLUME_USD) continue;
 
         const outcomePrices = buildOutcomePrices(pricing);
         const hasValidPrices = Object.values(outcomePrices).some((v) => v > 0);

@@ -35,6 +35,9 @@ export const PredictionCard = memo(function PredictionCard({
       : market.outcomePrices,
   );
 
+  const hasYesNo = "Yes" in prices && "No" in prices;
+  if (!hasYesNo) return null;
+
   const yesPrice = prices["Yes"] ?? 0;
   const noPrice = prices["No"] ?? 0;
   const yesPercent = Math.round(yesPrice * 100);

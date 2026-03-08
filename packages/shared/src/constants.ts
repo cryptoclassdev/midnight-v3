@@ -12,6 +12,8 @@ export const MARKET_FETCH_INTERVAL_MINUTES = 5;
 
 export const TOP_COINS_COUNT = 20;
 
+export const MINIMUM_TRADE_USD = 1;
+
 export const CATEGORIES = ["all", "crypto", "ai"] as const;
 
 export const CategoryLabel: Record<(typeof CATEGORIES)[number], string> = {

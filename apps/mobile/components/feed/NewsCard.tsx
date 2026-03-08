@@ -108,9 +108,12 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
   const cleanTitle = stripEmoji(article.title);
   const cleanSummary = truncateSummary(stripEmoji(article.summary));
 
-  const markets = (article.predictionMarkets ?? []).filter(
-    (m, i, arr) => arr.findIndex((x) => x.id === m.id) === i,
-  );
+  const markets = (article.predictionMarkets ?? [])
+    .filter((m, i, arr) => arr.findIndex((x) => x.id === m.id) === i)
+    .filter((m) => {
+      const op = m.outcomePrices as Record<string, unknown> | null;
+      return op && "Yes" in op && "No" in op;
+    });
 
   return (
     <View style={[styles.container, { backgroundColor: themeColors.background }]}>
@@ -191,11 +194,6 @@ export const NewsCard = memo(function NewsCard({ article }: NewsCardProps) {
               {markets.slice(0, MAX_VISIBLE_MARKETS).map((market) => (
                 <PredictionCard key={market.id} market={market} />
               ))}
-              {markets.length > MAX_VISIBLE_MARKETS && (
-                <Text style={[styles.moreLinkText, { color: themeColors.textMuted, textAlign: "right", paddingVertical: 2 }]}>
-                  +{markets.length - MAX_VISIBLE_MARKETS} more
-                </Text>
-              )}
             </View>
           </View>
         ) : (
@@ -328,11 +326,6 @@ const styles = StyleSheet.create({
   },
   marketsStack: {
     gap: 6,
-  },
-  moreLinkText: {
-    fontFamily: fonts.mono.regular,
-    fontSize: 10,
-    letterSpacing: letterSpacing.wide,
   },
   createMarketButton: {
     flexDirection: "row",
