@@ -142,21 +142,33 @@ predictionRoutes.get("/predictions/positions", async (c) => {
 predictionRoutes.delete("/predictions/positions/:positionPubkey", async (c) => {
   const { positionPubkey } = c.req.param();
   const body = await c.req.json();
-  const data = await jupiter.delete(`positions/${positionPubkey}`, { json: body }).json();
-  return c.json(data);
+  try {
+    const data = await jupiter.delete(`positions/${positionPubkey}`, { json: body }).json();
+    return c.json(data);
+  } catch (err) {
+    return forwardJupiterError(err, c);
+  }
 });
 
 predictionRoutes.delete("/predictions/positions", async (c) => {
   const body = await c.req.json();
-  const data = await jupiter.delete("positions", { json: body }).json();
-  return c.json(data);
+  try {
+    const data = await jupiter.delete("positions", { json: body }).json();
+    return c.json(data);
+  } catch (err) {
+    return forwardJupiterError(err, c);
+  }
 });
 
 predictionRoutes.post("/predictions/positions/:positionPubkey/claim", async (c) => {
   const { positionPubkey } = c.req.param();
   const body = await c.req.json();
-  const data = await jupiter.post(`positions/${positionPubkey}/claim`, { json: body }).json();
-  return c.json(data);
+  try {
+    const data = await jupiter.post(`positions/${positionPubkey}/claim`, { json: body }).json();
+    return c.json(data);
+  } catch (err) {
+    return forwardJupiterError(err, c);
+  }
 });
 
 // --- Live prices (for inline article cards) ---
