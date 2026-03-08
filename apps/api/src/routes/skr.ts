@@ -24,7 +24,7 @@ skrRoutes.post("/skr/resolve-domain", async (c) => {
   try {
     const owner = await parser.getOwnerFromDomainTld(domainName);
     if (!owner) {
-      return c.json({ error: "Domain not found" }, 404);
+      return c.json({ address: null });
     }
     const address = typeof owner === "string" ? owner : owner.toBase58();
     return c.json({ address });
@@ -56,7 +56,7 @@ skrRoutes.post("/skr/resolve-address", async (c) => {
     );
     const first = domains?.[0];
     if (!first) {
-      return c.json({ error: "No .skr domain found for this address" }, 404);
+      return c.json({ domain: null });
     }
     return c.json({ domain: first.domain });
   } catch {
