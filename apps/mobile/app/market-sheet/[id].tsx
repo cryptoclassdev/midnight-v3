@@ -29,6 +29,7 @@ import {
 } from "@mintfeed/shared";
 import { showToast } from "@/lib/toast";
 import { buildResolutionRulePreview, formatResolveDateTime } from "./utils";
+import { WalletPicker } from "@/components/wallet/WalletPicker";
 
 const STATUS_COLORS = {
   open: "#00ff66",
@@ -40,8 +41,9 @@ export default function MarketSheet() {
   const { id: marketId, question } = useLocalSearchParams<{ id: string; question?: string }>();
   const router = useRouter();
   const theme = useAppStore((s) => s.theme);
-  const { account, connect } = useMobileWallet();
+  const { account } = useMobileWallet();
   const walletAddress = account?.address.toString() ?? null;
+  const [walletPickerVisible, setWalletPickerVisible] = useState(false);
   const themeColors = colors[theme];
 
   const { data: market, isLoading: marketLoading } = usePredictionMarketDetail(marketId);
@@ -71,15 +73,9 @@ export default function MarketSheet() {
     return Math.floor(usd / price);
   }, [amount, selectedSide, yesPrice, noPrice]);
 
-  const handleConnectWallet = useCallback(async () => {
-    try {
-      await connect();
-      showToast("success", "Wallet Connected");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Connection failed";
-      showToast("error", "Connection Failed", msg);
-    }
-  }, [connect]);
+  const handleConnectWallet = useCallback(() => {
+    setWalletPickerVisible(true);
+  }, []);
 
   const handlePlaceBet = useCallback(async () => {
     if (!walletAddress || !marketId) return;
@@ -395,6 +391,10 @@ export default function MarketSheet() {
         )}
       </View>
 
+      <WalletPicker
+        visible={walletPickerVisible}
+        onClose={() => setWalletPickerVisible(false)}
+      />
     </SafeAreaView>
   );
 }

@@ -13,6 +13,7 @@ import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import { useAppStore } from "@/lib/store";
 import { formatSolanaAddress } from "@/lib/solana";
 import { useSkrDomain } from "@/hooks/useSkrDomain";
+import { useSeekerVerification } from "@/hooks/useSeekerVerification";
 import { usePredictionPositions } from "@/hooks/usePredictionPositions";
 import { usePredictionOrders } from "@/hooks/usePredictionOrders";
 import { PositionCard } from "@/components/predict/PositionCard";
@@ -26,6 +27,8 @@ export default function ProfileView() {
   const walletAddress = account?.address.toString() ?? null;
 
   const { data: skrDomain } = useSkrDomain(walletAddress);
+  const { data: seekerStatus } = useSeekerVerification(walletAddress);
+  const isSeeker = seekerStatus?.isSeeker ?? false;
   const { data: positionsData, isLoading: positionsLoading } =
     usePredictionPositions(walletAddress ?? undefined);
   const { data: ordersData, isLoading: ordersLoading } =
@@ -83,10 +86,29 @@ export default function ProfileView() {
               size={18}
               color={themeColors.accentMint}
             />
-            <View>
-              <Text style={[styles.rowLabel, { color: themeColors.text }]}>
-                {displayName}
-              </Text>
+            <View style={{ flex: 1 }}>
+              <View style={styles.nameRow}>
+                <Text style={[styles.rowLabel, { color: themeColors.text }]}>
+                  {displayName}
+                </Text>
+                {isSeeker && (
+                  <View
+                    style={[
+                      styles.seekerBadge,
+                      { backgroundColor: themeColors.accentMint + "20" },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.seekerBadgeText,
+                        { color: themeColors.accentMint },
+                      ]}
+                    >
+                      SEEKER
+                    </Text>
+                  </View>
+                )}
+              </View>
               {walletAddress && (
                 <Text
                   style={[
@@ -379,9 +401,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   rowLabel: {
     fontFamily: fonts.brand.regular,
     fontSize: fontSize.base,
+  },
+  seekerBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderCurve: "continuous",
+  },
+  seekerBadgeText: {
+    fontFamily: fonts.mono.bold,
+    fontSize: 8,
+    letterSpacing: letterSpacing.wide,
   },
   walletFull: {
     fontFamily: fonts.mono.regular,
