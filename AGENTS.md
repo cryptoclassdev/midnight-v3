@@ -88,6 +88,30 @@ Types mirror Prisma models for API responses. Key constants: `DEFAULT_PAGE_SIZE=
 - **Fonts:** Anton 400 (display headlines), Inter 300/400/600/700 (body), JetBrains Mono 400/700 (mono/labels), BlauerNue (brand/logo only)
 - **Definitions:** `apps/mobile/constants/theme.ts` and `apps/mobile/constants/typography.ts`
 
+## Deployment
+
+**API server** is deployed on **Railway** (account: tldrcryptolink@gmail.com, workspace: breakthesimulation).
+
+- **Project:** MintFeed V3
+- **Service:** mintfeed-api
+- **Environment:** production
+- **Public URL:** `https://mintfeed-api-production.up.railway.app`
+
+Deploy via Railway CLI (must be logged in):
+
+```bash
+# Link repo to Railway project (one-time setup, already done)
+railway link
+
+# Deploy current code
+railway up
+
+# Check logs
+railway logs --lines 50
+```
+
+The repo root `Dockerfile` is used for builds (Node 20, tsup bundler, serves `dist/index.mjs`).
+
 ## Environment Variables
 
 See `.env.example`. Required: `DATABASE_URL`, `DIRECT_URL`, `GEMINI_API_KEY`, `COINGECKO_API_URL`, `PORT`. Mobile needs `EXPO_PUBLIC_API_URL`.
