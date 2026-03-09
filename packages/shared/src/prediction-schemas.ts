@@ -10,7 +10,7 @@ const pubkeySchema = z.string().regex(pubkeyRegex, "Invalid Solana public key");
 export const CreateOrderSchema = z
   .object({
     ownerPubkey: pubkeySchema,
-    marketId: z.string().uuid().optional(),
+    marketId: z.string().min(1, "marketId must not be empty").optional(),
     positionPubkey: pubkeySchema.optional(),
     isYes: z.boolean(),
     isBuy: z.boolean(),

@@ -42,7 +42,7 @@ export function submitSignedTransaction(
     .post(`${BASE}/transactions/submit`, {
       json: body,
       timeout: 45_000,
-      retry: { limit: 3, methods: ["post"] },
+      retry: 0,
     })
     .json();
 }
