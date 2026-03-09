@@ -18,7 +18,7 @@ import { usePredictionPositions } from "@/hooks/usePredictionPositions";
 import { usePredictionOrders } from "@/hooks/usePredictionOrders";
 import { PositionCard } from "@/components/predict/PositionCard";
 import { OrderRow } from "@/components/predict/OrderRow";
-import { microToUsd } from "@mintfeed/shared";
+import { getPortfolioSummary } from "@mintfeed/shared";
 
 export default function ProfileView() {
   const theme = useAppStore((s) => s.theme);
@@ -50,14 +50,9 @@ export default function ProfileView() {
       ? formatSolanaAddress(walletAddress)
       : "User";
 
-  const totalValue = openPositions.reduce(
-    (sum, p) => sum + microToUsd(p.costBasisUsd) + microToUsd(p.pnlUsd),
-    0,
-  );
-  const totalPnl = openPositions.reduce(
-    (sum, p) => sum + microToUsd(p.pnlUsd),
-    0,
-  );
+  const portfolio = getPortfolioSummary(openPositions);
+  const totalValue = portfolio.totalValue;
+  const totalPnl = portfolio.totalPnl;
   const hasPositions = openPositions.length > 0;
   const hasHistory = orders.length > 0 || closedPositions.length > 0;
   const [showHistory, setShowHistory] = useState(false);

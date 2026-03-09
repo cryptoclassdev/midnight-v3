@@ -1,7 +1,13 @@
 import { Hono } from "hono";
 import ky, { HTTPError } from "ky";
 import type { SubmitSignedTransactionRequest } from "@mintfeed/shared";
-import { USDC_MINT } from "@mintfeed/shared";
+import {
+  USDC_MINT,
+  CreateOrderSchema,
+  ClosePositionSchema,
+  ClaimPositionSchema,
+  formatZodErrors,
+} from "@mintfeed/shared";
 import { prisma } from "@mintfeed/db";
 import { relaySignedTransaction } from "../services/solana-relay.service";
 
@@ -72,15 +78,18 @@ predictionRoutes.get("/predictions/trading-status", async (c) => {
 
 predictionRoutes.post("/predictions/orders", async (c) => {
   const body = await c.req.json();
-  console.log("[Orders] Request body:", JSON.stringify(body, null, 2));
+  const parsed = CreateOrderSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: formatZodErrors(parsed.error) }, 400);
+  }
+  console.log("[Orders] Request body:", JSON.stringify(parsed.data, null, 2));
   try {
-    const data = await jupiter.post("orders", { json: body }).json();
+    const data = await jupiter.post("orders", { json: parsed.data }).json();
     console.log("[Orders] Jupiter response:", JSON.stringify(data, null, 2));
     return c.json(data);
   } catch (err: any) {
     const raw = await err?.response?.text?.().catch(() => null);
     console.error("[Orders] Jupiter raw error:", err?.response?.status, raw);
-    // Re-read body for forwarding since .text() consumed it — parse from raw
     try {
       const parsed = JSON.parse(raw ?? "{}");
       console.error("[Orders] Jupiter parsed error:", parsed);
@@ -142,20 +151,20 @@ predictionRoutes.get("/predictions/positions", async (c) => {
 
 predictionRoutes.delete("/predictions/positions/:positionPubkey", async (c) => {
   const { positionPubkey } = c.req.param();
-  const body = await c.req.json<{
-    ownerPubkey: string;
-    isYes: boolean;
-    contracts: string;
-  }>();
+  const body = await c.req.json();
+  const parsed = ClosePositionSchema.safeParse({ ...body, positionPubkey });
+  if (!parsed.success) {
+    return c.json({ error: formatZodErrors(parsed.error) }, 400);
+  }
   try {
     const data = await jupiter
       .post("orders", {
         json: {
-          ownerPubkey: body.ownerPubkey,
+          ownerPubkey: parsed.data.ownerPubkey,
           positionPubkey,
           isBuy: false,
-          isYes: body.isYes,
-          contracts: body.contracts,
+          isYes: parsed.data.isYes,
+          contracts: parsed.data.contracts,
           depositMint: USDC_MINT,
         },
       })
@@ -199,8 +208,17 @@ predictionRoutes.delete("/predictions/positions", async (c) => {
 predictionRoutes.post("/predictions/positions/:positionPubkey/claim", async (c) => {
   const { positionPubkey } = c.req.param();
   const body = await c.req.json();
+  const parsed = ClaimPositionSchema.safeParse({ ...body, positionPubkey });
+  if (!parsed.success) {
+    return c.json({ error: formatZodErrors(parsed.error) }, 400);
+  }
   try {
-    const data = await jupiter.post(`positions/${positionPubkey}/claim`, { json: body }).json();
+    // Pass depositMint to ensure USDC payout (not jupUSD)
+    const data = await jupiter
+      .post(`positions/${positionPubkey}/claim`, {
+        json: { ownerPubkey: parsed.data.ownerPubkey, depositMint: USDC_MINT },
+      })
+      .json();
     return c.json(data);
   } catch (err) {
     return forwardJupiterError(err, c);

@@ -10,9 +10,11 @@ import {
 } from "@/lib/prediction-client";
 import {
   isWalletError,
+  isTransactionExpired,
   signPredictionTransaction,
   type TransactionMeta,
 } from "@/lib/wallet";
+import { fetchWalletBalances, getBalanceError } from "@/lib/balance";
 import type {
   CreateOrderRequest,
   CreateOrderResponse,
@@ -81,6 +83,23 @@ export function useCreateOrder() {
 
       if (__DEV__) console.log("[createOrder] Request:", JSON.stringify(request));
 
+      // Pre-flight balance check for buy orders
+      if (request.isBuy && request.depositAmount) {
+        try {
+          const balances = await fetchWalletBalances(walletAddress);
+          const balanceError = getBalanceError(balances, Number(request.depositAmount));
+          if (balanceError) {
+            throw new Error(balanceError);
+          }
+        } catch (err) {
+          if (err instanceof Error && err.message.startsWith("Insufficient")) {
+            throw err;
+          }
+          // RPC failure — proceed anyway, server will catch
+          if (__DEV__) console.warn("[createOrder] Balance check failed:", err);
+        }
+      }
+
       let response: CreateOrderResponse;
       try {
         response = await createOrder(request);
@@ -111,7 +130,7 @@ export function useCreateOrder() {
           );
         }
         throw new Error(
-          body?.message ?? httpErr?.message ?? "Failed to create order",
+          body?.error ?? body?.message ?? httpErr?.message ?? "Failed to create order",
         );
       }
 
@@ -167,13 +186,28 @@ export function useClosePosition() {
       if (!walletAddress) {
         throw new Error("Wallet not connected");
       }
+
+      // SOL pre-check (closing needs fees)
       try {
-        const response: CreateOrderResponse = await closePosition(
-          positionPubkey,
-          ownerPubkey,
-          isYes,
-          contracts,
-        );
+        const balances = await fetchWalletBalances(walletAddress);
+        if (balances.solLamports < 30_000_000) {
+          throw new Error("Insufficient SOL for transaction fees. You need ~0.03 SOL.");
+        }
+      } catch (err) {
+        if (err instanceof Error && err.message.startsWith("Insufficient")) throw err;
+        if (__DEV__) console.warn("[closePosition] Balance check failed:", err);
+      }
+
+      let response: CreateOrderResponse;
+      try {
+        response = await closePosition(positionPubkey, ownerPubkey, isYes, contracts);
+      } catch (err: unknown) {
+        const httpErr = err as { response?: { json?: () => Promise<Record<string, string>> }; message?: string };
+        const body = await httpErr?.response?.json?.().catch(() => null);
+        throw new Error(body?.error ?? body?.message ?? httpErr?.message ?? "Failed to close position");
+      }
+
+      try {
         return await signAndRelay(
           (tx) => signTransaction(tx),
           response.transaction,
@@ -182,6 +216,11 @@ export function useClosePosition() {
       } catch (error) {
         if (isWalletError(error)) {
           throw toWalletActionError(error);
+        }
+        if (isTransactionExpired(error)) {
+          const err = new Error("Transaction expired. Please try again.");
+          (err as any).retryable = true;
+          throw err;
         }
         throw await toRelayActionError(error);
       }
@@ -212,20 +251,37 @@ export function useCloseAllPositions() {
       const responses: CreateOrderResponse[] =
         await closeAllPositions(ownerPubkey);
       const signatures: string[] = [];
-      try {
-        for (const r of responses) {
+      const failures: string[] = [];
+
+      for (const r of responses) {
+        try {
           const signature = await signAndRelay(
             (tx) => signTransaction(tx),
             r.transaction,
             r.txMeta,
           );
           signatures.push(signature);
+        } catch (error) {
+          if (isWalletError(error)) {
+            // User rejected — stop processing remaining
+            if (signatures.length > 0) {
+              throw new Error(
+                `Closed ${signatures.length} position(s), then cancelled. ${responses.length - signatures.length} remaining.`,
+              );
+            }
+            throw toWalletActionError(error);
+          }
+          failures.push(error instanceof Error ? error.message : String(error));
         }
-      } catch (error) {
-        if (isWalletError(error)) {
-          throw toWalletActionError(error);
-        }
-        throw await toRelayActionError(error);
+      }
+
+      if (failures.length > 0 && signatures.length > 0) {
+        throw new Error(
+          `Closed ${signatures.length}/${responses.length} positions. ${failures.length} failed.`,
+        );
+      }
+      if (failures.length > 0) {
+        throw new Error(`All ${failures.length} close attempts failed.`);
       }
       return signatures;
     },
@@ -250,17 +306,37 @@ export function useClaimPosition() {
   return useMutation<
     string,
     Error,
-    { positionPubkey: string; ownerPubkey: string }
+    { positionPubkey: string; ownerPubkey: string; claimable?: boolean }
   >({
-    mutationFn: async ({ positionPubkey, ownerPubkey }) => {
+    mutationFn: async ({ positionPubkey, ownerPubkey, claimable }) => {
       if (!walletAddress) {
         throw new Error("Wallet not connected");
       }
+      if (claimable === false) {
+        throw new Error("This position is not yet claimable.");
+      }
+
+      // SOL pre-check
       try {
-        const response: ClaimPositionResponse = await claimPosition(
-          positionPubkey,
-          ownerPubkey,
-        );
+        const balances = await fetchWalletBalances(walletAddress);
+        if (balances.solLamports < 30_000_000) {
+          throw new Error("Insufficient SOL for transaction fees. You need ~0.03 SOL.");
+        }
+      } catch (err) {
+        if (err instanceof Error && err.message.startsWith("Insufficient")) throw err;
+        if (__DEV__) console.warn("[claimPosition] Balance check failed:", err);
+      }
+
+      let response: ClaimPositionResponse;
+      try {
+        response = await claimPosition(positionPubkey, ownerPubkey);
+      } catch (err: unknown) {
+        const httpErr = err as { response?: { json?: () => Promise<Record<string, string>> }; message?: string };
+        const body = await httpErr?.response?.json?.().catch(() => null);
+        throw new Error(body?.error ?? body?.message ?? httpErr?.message ?? "Failed to claim position");
+      }
+
+      try {
         return await signAndRelay(
           (tx) => signTransaction(tx),
           response.transaction,
@@ -269,6 +345,11 @@ export function useClaimPosition() {
       } catch (error) {
         if (isWalletError(error)) {
           throw toWalletActionError(error);
+        }
+        if (isTransactionExpired(error)) {
+          const err = new Error("Transaction expired. Please try again.");
+          (err as any).retryable = true;
+          throw err;
         }
         throw await toRelayActionError(error);
       }

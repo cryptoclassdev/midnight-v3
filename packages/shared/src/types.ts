@@ -161,6 +161,17 @@ export interface PredictionPosition {
   costBasisUsd: string;
   pnlUsd: string;
   claimable: boolean;
+  // Extended fields from Jupiter API
+  valueUsd: string | null;
+  avgPriceUsd: string | null;
+  pnlUsdAfterFees: string | null;
+  pnlUsdPercent: number | null;
+  feesPaidUsd: string | null;
+  realizedPnlUsd: string | null;
+  payoutUsd: string | null;
+  claimableAt: number | null;
+  claimed: boolean;
+  openedAt: number | null;
   market?: {
     title: string;
     status: string;

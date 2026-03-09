@@ -14,7 +14,16 @@ import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import { useClosePosition, useClaimPosition } from "@/hooks/usePredictionTrading";
 import { microToUsd } from "@mintfeed/shared";
+import {
+  getPositionValue,
+  getPositionPnl,
+  getPositionPnlPercent,
+  getPositionAvgPrice,
+  getPositionFees,
+} from "@mintfeed/shared";
 import type { PredictionPosition } from "@mintfeed/shared";
+
+type ProgressState = "idle" | "signing" | "broadcasting" | "confirming";
 
 interface PositionCardProps {
   position: PredictionPosition;
@@ -31,14 +40,17 @@ export const PositionCard = memo(function PositionCard({
   const [actionLoading, setActionLoading] = useState<"close" | "claim" | null>(
     null,
   );
+  const [progressState, setProgressState] = useState<ProgressState>("idle");
+  const [lastError, setLastError] = useState<{ message: string; retryable: boolean } | null>(null);
 
   const contracts = Number(position.contracts);
   const costBasis = microToUsd(position.costBasisUsd);
-  const pnl = microToUsd(position.pnlUsd);
-  const pnlPercent =
-    costBasis > 0 ? ((pnl / costBasis) * 100).toFixed(1) : "0.0";
+  const pnl = getPositionPnl(position);
+  const pnlPercent = getPositionPnlPercent(position).toFixed(1);
   const isProfitable = pnl >= 0;
-  const currentValue = costBasis + pnl;
+  const currentValue = getPositionValue(position);
+  const avgPrice = getPositionAvgPrice(position);
+  const fees = getPositionFees(position);
 
   const marketTitle = position.market?.title ?? "Unknown Market";
   const marketStatus = position.market?.status ?? "open";
@@ -65,6 +77,8 @@ export const PositionCard = memo(function PositionCard({
           style: "destructive",
           onPress: async () => {
             setActionLoading("close");
+            setLastError(null);
+            setProgressState("signing");
             try {
               await closePos.mutateAsync({
                 positionPubkey: position.pubkey,
@@ -72,9 +86,13 @@ export const PositionCard = memo(function PositionCard({
                 isYes: position.isYes,
                 contracts: position.contracts,
               });
+              setProgressState("idle");
               showToast("success", "Position Closed", "Your position has been sold.");
             } catch (err: unknown) {
+              setProgressState("idle");
               const msg = err instanceof Error ? err.message : String(err);
+              const retryable = !!(err as any)?.retryable;
+              setLastError({ message: msg, retryable });
               showToast("error", "Failed", msg);
             } finally {
               setActionLoading(null);
@@ -87,19 +105,38 @@ export const PositionCard = memo(function PositionCard({
 
   const handleClaim = useCallback(async () => {
     setActionLoading("claim");
+    setLastError(null);
+    setProgressState("signing");
     try {
       await claimPos.mutateAsync({
         positionPubkey: position.pubkey,
         ownerPubkey: position.ownerPubkey,
+        claimable: position.claimable,
       });
+      setProgressState("idle");
       showToast("success", "Claimed!", "Winnings have been sent to your wallet.");
     } catch (err: unknown) {
+      setProgressState("idle");
       const msg = err instanceof Error ? err.message : String(err);
+      const retryable = !!(err as any)?.retryable;
+      setLastError({ message: msg, retryable });
       showToast("error", "Claim Failed", msg);
     } finally {
       setActionLoading(null);
     }
   }, [claimPos, position]);
+
+  const handleRetry = useCallback(() => {
+    setLastError(null);
+    if (actionLoading === null && lastError?.retryable) {
+      // Retry the last action
+      if (position.claimable) {
+        handleClaim();
+      } else {
+        handleClose();
+      }
+    }
+  }, [actionLoading, lastError, position.claimable, handleClaim, handleClose]);
 
   return (
     <View
@@ -254,6 +291,47 @@ export const PositionCard = memo(function PositionCard({
             ]}
           />
         </View>
+      )}
+
+      {/* Extra stats: avg price + fees */}
+      {(avgPrice !== null || fees > 0) && (
+        <View style={styles.extraStats}>
+          {avgPrice !== null && (
+            <Text style={[styles.extraStatText, { color: themeColors.textMuted }]}>
+              Avg: {(avgPrice * 100).toFixed(1)}¢
+            </Text>
+          )}
+          {fees > 0 && (
+            <Text style={[styles.extraStatText, { color: themeColors.textMuted }]}>
+              Fees: ${fees.toFixed(2)}
+            </Text>
+          )}
+        </View>
+      )}
+
+      {/* Progress state */}
+      {progressState !== "idle" && (
+        <View style={styles.progressRow}>
+          <ActivityIndicator size="small" color={themeColors.accent} />
+          <Text style={[styles.progressText, { color: themeColors.textMuted }]}>
+            {progressState === "signing" && "Signing..."}
+            {progressState === "broadcasting" && "Broadcasting..."}
+            {progressState === "confirming" && "Confirming..."}
+          </Text>
+        </View>
+      )}
+
+      {/* Retry on expired transaction */}
+      {lastError?.retryable && actionLoading === null && (
+        <Pressable
+          style={[styles.retryButton, { borderColor: themeColors.accent }]}
+          onPress={handleRetry}
+          accessibilityRole="button"
+          accessibilityLabel="Retry transaction"
+        >
+          <Ionicons name="refresh" size={14} color={themeColors.accent} />
+          <Text style={[styles.actionText, { color: themeColors.accent }]}>Retry</Text>
+        </Pressable>
       )}
 
       {/* Action Buttons */}
@@ -424,5 +502,34 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: letterSpacing.wide,
     textTransform: "uppercase",
+  },
+  extraStats: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  extraStatText: {
+    fontFamily: fonts.mono.regular,
+    fontSize: 10,
+    letterSpacing: letterSpacing.wide,
+  },
+  progressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  progressText: {
+    fontFamily: fonts.mono.regular,
+    fontSize: 10,
+    letterSpacing: letterSpacing.wide,
+  },
+  retryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    height: 32,
+    borderRadius: 8,
+    borderCurve: "continuous",
+    borderWidth: 1,
   },
 });

@@ -17,6 +17,7 @@ const WALLET_ERROR_CODES = new Set<WalletErrorCode>([
 
 export class WalletError extends Error {
   code: WalletErrorCode;
+  retryable: boolean;
 
   constructor(
     code: WalletErrorCode,
@@ -26,6 +27,7 @@ export class WalletError extends Error {
     super(message);
     this.name = "WalletError";
     this.code = code;
+    this.retryable = code === "TRANSACTION_EXPIRED";
     if (options?.cause !== undefined) {
       Object.defineProperty(this, "cause", {
         value: options.cause,

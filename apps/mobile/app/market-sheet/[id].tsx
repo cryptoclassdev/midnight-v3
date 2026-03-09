@@ -17,6 +17,8 @@ import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import { usePredictionMarketDetail } from "@/hooks/usePredictionMarket";
 import { useCreateOrder, useTradingStatus } from "@/hooks/usePredictionTrading";
+import { useWalletBalance } from "@/hooks/useWalletBalance";
+import { getBalanceError } from "@/lib/balance";
 import {
   microToUsd,
   usdToMicro,
@@ -49,6 +51,7 @@ export default function MarketSheet() {
   const { data: market, isLoading: marketLoading } = usePredictionMarketDetail(marketId);
   const createOrder = useCreateOrder();
   const { data: tradingStatus } = useTradingStatus();
+  const { data: walletBalances } = useWalletBalance(walletAddress);
 
   const [selectedSide, setSelectedSide] = useState<"yes" | "no">("yes");
   const [amount, setAmount] = useState("");
@@ -64,6 +67,17 @@ export default function MarketSheet() {
     () => buildResolutionRulePreview(market?.metadata.rulesPrimary),
     [market?.metadata.rulesPrimary],
   );
+
+  const balanceWarning = useMemo(() => {
+    if (!walletBalances) return null;
+    const usd = parseTradeAmount(amount);
+    if (!usd || usd <= 0) return null;
+    return getBalanceError(walletBalances, Number(usdToMicro(usd)));
+  }, [walletBalances, amount]);
+
+  const usdcBalance = walletBalances
+    ? (walletBalances.usdcMicroAmount / 1_000_000).toFixed(2)
+    : null;
 
   const estimatedShares = useMemo(() => {
     const usd = parseTradeAmount(amount);
@@ -110,7 +124,7 @@ export default function MarketSheet() {
   const hasAmountInput = amount.length > 0;
   const isAmountInvalid = hasAmountInput && !tradeValidation.valid;
 
-  const buyButtonDisabled = !tradeValidation.valid || createOrder.isPending || isTradingPaused;
+  const buyButtonDisabled = !tradeValidation.valid || createOrder.isPending || isTradingPaused || !!balanceWarning;
 
   const buyButtonText = useMemo(() => {
     if (isTradingPaused) return "Trading Paused";
@@ -338,8 +352,22 @@ export default function MarketSheet() {
               </View>
             </View>
 
+            {/* Balance display */}
+            {usdcBalance !== null && (
+              <Text style={[styles.hintText, { color: themeColors.textMuted }]}>
+                Balance: ${usdcBalance} USDC
+              </Text>
+            )}
+
+            {/* Balance warning */}
+            {balanceWarning && (
+              <Text style={[styles.errorText, { color: themeColors.negative }]}>
+                {balanceWarning}
+              </Text>
+            )}
+
             {/* Validation error */}
-            {isAmountInvalid && tradeValidation.error === "BELOW_MINIMUM" && (
+            {!balanceWarning && isAmountInvalid && tradeValidation.error === "BELOW_MINIMUM" && (
               <Text style={[styles.errorText, { color: themeColors.negative }]}>
                 Minimum bet: {'>'}${MINIMUM_TRADE_USD.toFixed(2)}
               </Text>
