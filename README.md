@@ -3,7 +3,7 @@
 
   # Midnight
 
-  *Crypto & AI news in 60 seconds — swipe, trade, stay informed.*
+  *Crypto & AI news in 60 words — swipe, bet, stay informed.*
 
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.7+-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![Expo SDK](https://img.shields.io/badge/Expo_SDK-52-000020?style=flat-square&logo=expo&logoColor=white)](https://expo.dev/)
