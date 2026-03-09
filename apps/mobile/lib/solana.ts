@@ -1,8 +1,16 @@
 import { Connection, clusterApiUrl } from "@solana/web3.js";
 import type { AppIdentity, Chain } from "@solana-mobile/mobile-wallet-adapter-protocol";
 
-export const SOLANA_CLUSTER = "mainnet-beta";
-export const SOLANA_MWA_CHAIN: Chain = "solana:mainnet";
+type SolanaCluster = "mainnet-beta" | "devnet" | "testnet";
+export const SOLANA_CLUSTER: SolanaCluster =
+  (process.env.EXPO_PUBLIC_SOLANA_CLUSTER as SolanaCluster) || "mainnet-beta";
+
+const CHAIN_MAP: Record<SolanaCluster, Chain> = {
+  "mainnet-beta": "solana:mainnet",
+  "devnet": "solana:devnet",
+  "testnet": "solana:testnet",
+};
+export const SOLANA_MWA_CHAIN: Chain = CHAIN_MAP[SOLANA_CLUSTER];
 
 export const APP_IDENTITY: AppIdentity = {
   name: "Midnight",

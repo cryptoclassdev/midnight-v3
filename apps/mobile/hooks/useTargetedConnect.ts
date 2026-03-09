@@ -2,7 +2,9 @@ import { useCallback } from "react";
 import { NativeModules } from "react-native";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 
-const { WalletTarget } = NativeModules;
+const WalletTarget = NativeModules.WalletTarget as {
+  setTargetPackage: (packageName: string | null) => void;
+} | null;
 
 /**
  * Wraps `useMobileWallet().connect()` with Android-level wallet targeting.
@@ -21,10 +23,10 @@ export function useTargetedConnect() {
   const connectToWallet = useCallback(
     async (packageName: string) => {
       try {
-        WalletTarget.setTargetPackage(packageName);
+        WalletTarget?.setTargetPackage(packageName);
         return await connect();
       } finally {
-        WalletTarget.setTargetPackage(null);
+        WalletTarget?.setTargetPackage(null);
       }
     },
     [connect],
