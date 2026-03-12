@@ -91,26 +91,47 @@ Types mirror Prisma models for API responses. Key constants: `DEFAULT_PAGE_SIZE=
 ## Deployment
 
 **API server** is deployed on **Railway** (account: tldrcryptolink@gmail.com, workspace: breakthesimulation).
+The repo root `Dockerfile` is used for builds (Node 20, tsup bundler, serves `dist/index.mjs`).
 
-- **Project:** MintFeed V3
+### Production
+
+- **Project:** MintFeed V3, **Environment:** production
 - **Service:** mintfeed-api
-- **Environment:** production
-- **Public URL:** `https://mintfeed-api-production.up.railway.app`
+- **Branch:** `main` (auto-deploys on push)
+- **URL:** `https://mintfeed-api-production.up.railway.app`
+- **Database:** Supabase production project
 
-Deploy via Railway CLI (must be logged in):
+### Staging
+
+- **Project:** MintFeed V3, **Environment:** staging
+- **Branch:** `stage` (auto-deploys on push)
+- **URL:** `https://mintfeed-api-staging.up.railway.app`
+- **Database:** Supabase staging project (`mintfeed-staging`)
+
+### Deploy Commands
 
 ```bash
-# Link repo to Railway project (one-time setup, already done)
-railway link
+# Deploy to staging (auto on push to stage, or manual):
+railway link -e staging
+railway up
 
-# Deploy current code
+# Deploy to production (auto on push to main, or manual):
+railway link -e production
 railway up
 
 # Check logs
 railway logs --lines 50
+
+# Run commands with staging env vars (e.g. push schema):
+railway link -e staging
+railway run -- npx prisma db push --schema packages/db/prisma/schema.prisma
 ```
 
-The repo root `Dockerfile` is used for builds (Node 20, tsup bundler, serves `dist/index.mjs`).
+### Branch Workflow
+
+```
+develop on stage → test on staging → PR stage → main → production
+```
 
 ## Environment Variables
 
