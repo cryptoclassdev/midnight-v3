@@ -143,15 +143,18 @@ export const SwipeBetCard = memo(function SwipeBetCard({
       const absX = Math.abs(e.translationX);
 
       if (absX >= SWIPE_THRESHOLD) {
-        // Commit the swipe
+        // Commit the swipe — subtle exit, then gentle return
         const side = e.translationX > 0 ? "yes" : "no";
-        const target = e.translationX > 0 ? SWIPE_COMMIT : -SWIPE_COMMIT;
+        // Small fixed translateX for exit (not full width) — exits should be softer than enters
+        const exitDistance = SWIPE_THRESHOLD * 1.2;
+        const target = e.translationX > 0 ? exitDistance : -exitDistance;
 
-        translateX.value = withTiming(target, { duration: 200 }, () => {
-          translateX.value = withSpring(0, SPRING_CONFIG);
+        translateX.value = withTiming(target, { duration: 150 }, () => {
+          // Gentle spring back — softer than the initial drag
+          translateX.value = withSpring(0, { damping: 25, stiffness: 200 });
         });
-        cardScale.value = withSpring(0.95, SPRING_CONFIG, () => {
-          cardScale.value = withSpring(1, SPRING_CONFIG);
+        cardScale.value = withSpring(0.97, SPRING_CONFIG, () => {
+          cardScale.value = withSpring(1, { damping: 25, stiffness: 200 });
         });
 
         runOnJS(handleSwipeBet)(side);
@@ -161,10 +164,17 @@ export const SwipeBetCard = memo(function SwipeBetCard({
       }
     });
 
-  // Tap gesture for opening market sheet
-  const tapGesture = Gesture.Tap().onEnd(() => {
-    runOnJS(openMarketSheet)();
-  });
+  // Tap gesture for opening market sheet — with scale(0.97) press feedback
+  const tapGesture = Gesture.Tap()
+    .onBegin(() => {
+      cardScale.value = withSpring(0.97, SPRING_CONFIG);
+    })
+    .onFinalize(() => {
+      cardScale.value = withSpring(1, SPRING_CONFIG);
+    })
+    .onEnd(() => {
+      runOnJS(openMarketSheet)();
+    });
 
   // Compose gestures: pan takes priority, tap is fallback
   const composedGesture = Gesture.Race(panGesture, tapGesture);
@@ -199,12 +209,12 @@ export const SwipeBetCard = memo(function SwipeBetCard({
     return { opacity };
   });
 
-  // Icon scale animations
+  // Icon animations — per skill: scale 0.25→1, opacity 0→1
   const yesIconStyle = useAnimatedStyle(() => {
     const scale = interpolate(
       translateX.value,
       [0, SWIPE_THRESHOLD],
-      [0.5, 1.2],
+      [0.25, 1],
       Extrapolation.CLAMP,
     );
     const opacity = interpolate(
@@ -216,11 +226,22 @@ export const SwipeBetCard = memo(function SwipeBetCard({
     return { transform: [{ scale }], opacity };
   });
 
+  // YES label — staggered: appears slightly after icon (~30% more drag needed)
+  const yesLabelStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      translateX.value,
+      [0, SWIPE_THRESHOLD * 0.4, SWIPE_THRESHOLD * 0.6],
+      [0, 0, 1],
+      Extrapolation.CLAMP,
+    );
+    return { opacity };
+  });
+
   const noIconStyle = useAnimatedStyle(() => {
     const scale = interpolate(
       translateX.value,
       [-SWIPE_THRESHOLD, 0],
-      [1.2, 0.5],
+      [1, 0.25],
       Extrapolation.CLAMP,
     );
     const opacity = interpolate(
@@ -230,6 +251,17 @@ export const SwipeBetCard = memo(function SwipeBetCard({
       Extrapolation.CLAMP,
     );
     return { transform: [{ scale }], opacity };
+  });
+
+  // NO label — staggered
+  const noLabelStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      translateX.value,
+      [-SWIPE_THRESHOLD * 0.6, -SWIPE_THRESHOLD * 0.4, 0],
+      [1, 0, 0],
+      Extrapolation.CLAMP,
+    );
+    return { opacity };
   });
 
   // Threshold indicator (border glow when past threshold)
@@ -309,7 +341,7 @@ export const SwipeBetCard = memo(function SwipeBetCard({
 
   return (
     <View style={styles.swipeContainer}>
-      {/* YES reveal (right swipe) */}
+      {/* YES reveal (right swipe) — icon + staggered label */}
       <Animated.View
         style={[
           styles.revealBg,
@@ -318,15 +350,18 @@ export const SwipeBetCard = memo(function SwipeBetCard({
           yesRevealStyle,
         ]}
       >
-        <Animated.View style={[styles.revealIcon, yesIconStyle]}>
-          <Ionicons name="checkmark-circle" size={24} color={themeColors.positive} />
-          <Text style={[styles.revealLabel, { color: themeColors.positive }]}>
+        <View style={styles.revealContent}>
+          <Animated.View style={[styles.revealIconWrap, yesIconStyle]}>
+            {/* Optical: checkmark icon is visually centered with 1px right offset */}
+            <Ionicons name="checkmark-circle" size={24} color={themeColors.positive} style={{ marginRight: -1 }} />
+          </Animated.View>
+          <Animated.Text style={[styles.revealLabel, { color: themeColors.positive }, yesLabelStyle]}>
             YES ${quickBetAmount}
-          </Text>
-        </Animated.View>
+          </Animated.Text>
+        </View>
       </Animated.View>
 
-      {/* NO reveal (left swipe) */}
+      {/* NO reveal (left swipe) — staggered label + icon */}
       <Animated.View
         style={[
           styles.revealBg,
@@ -335,12 +370,15 @@ export const SwipeBetCard = memo(function SwipeBetCard({
           noRevealStyle,
         ]}
       >
-        <Animated.View style={[styles.revealIcon, noIconStyle]}>
-          <Text style={[styles.revealLabel, { color: themeColors.negative }]}>
+        <View style={styles.revealContent}>
+          <Animated.Text style={[styles.revealLabel, { color: themeColors.negative }, noLabelStyle]}>
             NO ${quickBetAmount}
-          </Text>
-          <Ionicons name="close-circle" size={24} color={themeColors.negative} />
-        </Animated.View>
+          </Animated.Text>
+          <Animated.View style={[styles.revealIconWrap, noIconStyle]}>
+            {/* Optical: close icon needs 1px left offset for visual centering */}
+            <Ionicons name="close-circle" size={24} color={themeColors.negative} style={{ marginLeft: -1 }} />
+          </Animated.View>
+        </View>
       </Animated.View>
 
       {/* The actual card */}
@@ -463,10 +501,15 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     paddingRight: 16,
   },
-  revealIcon: {
+  revealContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
+  },
+  revealIconWrap: {
+    // Optical centering container for icons
+    justifyContent: "center",
+    alignItems: "center",
   },
   revealLabel: {
     fontFamily: fonts.mono.bold,
