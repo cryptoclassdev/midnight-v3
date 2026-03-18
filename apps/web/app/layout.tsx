@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 const inter = Inter({
@@ -12,6 +13,12 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
   variable: "--font-jetbrains",
+});
+
+const blauerNue = localFont({
+  src: "../fonts/BlauerNue-Bold.woff2",
+  weight: "700",
+  variable: "--font-blauer",
 });
 
 export const metadata: Metadata = {
@@ -28,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`scroll-smooth bg-[#000000] ${inter.variable} ${jetbrainsMono.variable}`}
+      className={`scroll-smooth bg-[#000000] ${inter.variable} ${jetbrainsMono.variable} ${blauerNue.variable}`}
     >
       <body className="font-sans antialiased overflow-x-hidden w-full min-h-screen flex flex-col bg-[#000000] selection:bg-white selection:text-black">
         {children}
