@@ -20,23 +20,11 @@ export default function Home() {
             <div className="w-5 h-5 rounded-full bg-[#f4f4f5] flex items-center justify-center">
               <div className="w-1.5 h-1.5 bg-[#000000] rounded-full" />
             </div>
-            <span className="text-base font-medium tracking-tight text-[#f4f4f5]">
+            <span className="text-base font-brand font-medium tracking-tight text-[#f4f4f5]">
               Midnight
             </span>
           </div>
           <div className="hidden md:flex items-center gap-10 font-sans text-xs font-medium">
-            <a
-              href="#how-it-works"
-              className="text-[#a1a1aa] hover:text-[#f4f4f5] transition-colors"
-            >
-              Protocol
-            </a>
-            <a
-              href="#markets"
-              className="text-[#a1a1aa] hover:text-[#f4f4f5] transition-colors"
-            >
-              Markets
-            </a>
             <a
               href="#download"
               className="bg-[#f4f4f5] text-[#000000] px-5 py-2 rounded-full hover:bg-white transition-colors"
@@ -114,12 +102,6 @@ export default function Home() {
 
             <PhoneMockup />
 
-            <div className="absolute top-1/4 -right-8 lg:-right-16 bg-[#111111]/80 backdrop-blur-md border border-[#ffffff15] px-6 py-2.5 rounded-full font-mono text-[9px] uppercase tracking-widest text-[#f4f4f5] z-10 hidden md:block">
-              $SOL <span className="text-[#a1a1aa] ml-2">+4.2%</span>
-            </div>
-            <div className="absolute bottom-1/4 -left-8 lg:-left-16 bg-[#111111]/80 backdrop-blur-md border border-[#ffffff15] px-6 py-2.5 rounded-full font-mono text-[9px] uppercase tracking-widest text-[#f4f4f5] z-30 hidden md:block">
-              AI Index Active
-            </div>
           </div>
         </div>
       </header>
@@ -322,7 +304,7 @@ export default function Home() {
                 <div className="w-6 h-6 rounded-full bg-[#f4f4f5] flex items-center justify-center">
                   <div className="w-1.5 h-1.5 bg-[#000000] rounded-full" />
                 </div>
-                <span className="text-lg font-medium tracking-tight text-[#f4f4f5]">
+                <span className="text-lg font-brand font-medium tracking-tight text-[#f4f4f5]">
                   Midnight
                 </span>
               </div>

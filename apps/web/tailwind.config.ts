@@ -19,6 +19,7 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-inter)", "sans-serif"],
         mono: ["var(--font-jetbrains)", "monospace"],
+        brand: ["var(--font-blauer)", "sans-serif"],
       },
       backgroundImage: {
         "glow-top":
