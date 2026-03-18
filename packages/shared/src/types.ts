@@ -13,6 +13,8 @@ export interface Article {
   originalTitle: string;
   imageUrl: string | null;
   imageBlurhash: string | null;
+  sourceType?: 'RSS' | 'TWITTER';
+  tweetId?: string | null;
   publishedAt: string;
   createdAt: string;
   predictionMarkets: PredictionMarket[];

@@ -43,7 +43,7 @@ export function startCronJobs(): void {
   // Run initial fetch on startup
   setTimeout(async () => {
     console.log("[Cron] Running initial data fetch...");
-    await Promise.allSettled([processArticles(), fetchMarketData(), refreshMarketPrices()]);
+    await Promise.allSettled([processArticles(), processTwitterItems(), fetchMarketData(), refreshMarketPrices()]);
     // Backfill prediction market matches for articles that missed matching
     await backfillMarketMatches().catch((err) =>
       console.error("[Cron] Backfill failed:", err),

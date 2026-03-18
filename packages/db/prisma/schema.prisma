@@ -109,6 +109,7 @@ model TwitterSource {
   handle          String            @unique
   displayName     String
   profileImageUrl String?
+  userId          String?
   tier            TwitterSourceTier @default(TIER_2)
   category        Category
   isActive        Boolean           @default(true)

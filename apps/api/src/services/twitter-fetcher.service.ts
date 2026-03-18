@@ -153,9 +153,13 @@ async function fetchUserTimeline(
       if (countCashtags(tweet) > 2) continue;
       // Filter: TIER_2 engagement threshold
       if (tier === "TIER_2" && !meetsEngagementThreshold(tweet)) continue;
+      // Filter: TIER_3 excluded (background context only — not surfaced in feed)
+      if (tier === "TIER_3") continue;
+
+      const cleanText = cleanTweetText(tweet.text);
+      if (!cleanText.trim()) continue;
 
       const imageUrl = await extractTweetImage(tweet, mediaMap);
-      const cleanText = cleanTweetText(tweet.text);
 
       items.push({
         title: cleanText.slice(0, 120) + (cleanText.length > 120 ? "..." : ""),
@@ -207,8 +211,18 @@ export async function fetchAllTwitterFeeds(): Promise<ParsedFeedItem[]> {
 
   // Process sources sequentially to respect rate limits
   for (const source of sources) {
-    const userId = await resolveUserId(api, source.handle);
-    if (!userId) continue;
+    // Use cached userId if available to avoid extra API calls each run
+    let userId = (source as typeof source & { userId?: string | null }).userId ?? null;
+    if (!userId) {
+      userId = await resolveUserId(api, source.handle);
+      if (!userId) continue;
+      await prisma.twitterSource.update({
+        where: { id: source.id },
+        data: { userId },
+      }).catch((err) => {
+        console.error(`[TwitterFetcher] Failed to cache userId for @${source.handle}:`, err);
+      });
+    }
 
     const items = await fetchUserTimeline(
       api,
