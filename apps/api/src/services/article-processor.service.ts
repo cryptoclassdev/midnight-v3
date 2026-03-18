@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { prisma } from "@mintfeed/db";
 import { fetchAllFeeds, type ParsedFeedItem } from "./rss-fetcher.service";
+import { fetchAllTwitterFeeds } from "./twitter-fetcher.service";
 import { rewriteArticle } from "./gemini.service";
 import { generateBlurhash } from "./image.service";
 import { matchMarketForArticle } from "./jupiter-prediction.service";
@@ -39,7 +40,23 @@ function hashTitle(title: string): string {
   return createHash("sha256").update(normalizeTitle(title)).digest("hex");
 }
 
-async function processItem(item: ParsedFeedItem): Promise<void> {
+interface ProcessItemOptions {
+  sourceType?: "RSS" | "TWITTER";
+  tweetId?: string;
+}
+
+async function processItem(item: ParsedFeedItem, options: ProcessItemOptions = {}): Promise<void> {
+  const { sourceType = "RSS", tweetId } = options;
+
+  // Dedup by tweetId for Twitter items
+  if (tweetId) {
+    const tweetExists = await prisma.article.findUnique({
+      where: { tweetId },
+      select: { id: true },
+    });
+    if (tweetExists) return;
+  }
+
   const sourceUrlHash = hashUrl(item.link);
 
   const exists = await prisma.article.findUnique({
@@ -77,6 +94,8 @@ async function processItem(item: ParsedFeedItem): Promise<void> {
       imageUrl: item.imageUrl,
       imageBlurhash,
       publishedAt: new Date(item.pubDate),
+      sourceType,
+      tweetId: tweetId ?? null,
     },
   });
 
@@ -120,5 +139,48 @@ export async function processArticles(): Promise<void> {
 
   console.log(
     `[ArticleProcessor] Done. Processed: ${processed}, Skipped: ${skipped}`
+  );
+}
+
+/** Extract tweetId from an x.com/twitter.com status URL */
+function extractTweetId(url: string): string | null {
+  const match = url.match(/(?:x\.com|twitter\.com)\/\w+\/status\/(\d+)/);
+  return match?.[1] ?? null;
+}
+
+export async function processTwitterItems(): Promise<void> {
+  console.log("[ArticleProcessor] Starting Twitter feed processing...");
+
+  const items = await fetchAllTwitterFeeds();
+  console.log(`[ArticleProcessor] Fetched ${items.length} items from Twitter`);
+
+  let processed = 0;
+  let skipped = 0;
+
+  for (const item of items) {
+    if (!item.link) {
+      skipped++;
+      continue;
+    }
+
+    const tweetId = extractTweetId(item.link);
+
+    try {
+      await processItem(item, { sourceType: "TWITTER", tweetId: tweetId ?? undefined });
+      processed++;
+    } catch (error) {
+      const isDuplicate =
+        error instanceof Error &&
+        error.message.includes("Unique constraint");
+      if (isDuplicate) {
+        skipped++;
+      } else {
+        console.error(`[ArticleProcessor] Failed to process tweet "${item.title.slice(0, 60)}":`, error);
+      }
+    }
+  }
+
+  console.log(
+    `[ArticleProcessor] Twitter done. Processed: ${processed}, Skipped: ${skipped}`
   );
 }

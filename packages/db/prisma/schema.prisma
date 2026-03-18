@@ -13,6 +13,17 @@ enum Category {
   AI
 }
 
+enum SourceType {
+  RSS
+  TWITTER
+}
+
+enum TwitterSourceTier {
+  TIER_1 // Always show
+  TIER_2 // Show if engagement threshold met
+  TIER_3 // Background context only
+}
+
 model Article {
   id                 String                    @id @default(cuid())
   sourceUrl          String                    @unique
@@ -26,6 +37,8 @@ model Article {
   summary            String                    @db.Text
   imageUrl           String?
   imageBlurhash      String?
+  sourceType         SourceType                @default(RSS)
+  tweetId            String?                   @unique
   publishedAt        DateTime
   fetchedAt          DateTime                  @default(now())
   createdAt          DateTime                  @default(now())
@@ -89,4 +102,16 @@ model FeedSource {
   isActive    Boolean   @default(true)
   lastFetchAt DateTime?
   createdAt   DateTime  @default(now())
+}
+
+model TwitterSource {
+  id              String            @id @default(cuid())
+  handle          String            @unique
+  displayName     String
+  profileImageUrl String?
+  tier            TwitterSourceTier @default(TIER_2)
+  category        Category
+  isActive        Boolean           @default(true)
+  lastFetchAt     DateTime?
+  createdAt       DateTime          @default(now())
 }

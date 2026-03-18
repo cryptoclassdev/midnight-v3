@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { processArticles } from "./services/article-processor.service";
+import { processArticles, processTwitterItems } from "./services/article-processor.service";
 import { fetchMarketData } from "./services/coingecko.service";
 import { refreshMarketPrices, backfillMarketMatches } from "./services/jupiter-prediction.service";
 
@@ -30,7 +30,15 @@ export function startCronJobs(): void {
     );
   });
 
-  console.log("[Cron] Scheduled: articles (15min), market (5min), predictions (5min), backfill (30min)");
+  // Fetch tweets every 15 minutes, staggered 7 minutes after RSS
+  cron.schedule("7,22,37,52 * * * *", async () => {
+    console.log("[Cron] Running Twitter feed fetch...");
+    await processTwitterItems().catch((err) =>
+      console.error("[Cron] Twitter fetch failed:", err),
+    );
+  });
+
+  console.log("[Cron] Scheduled: articles (15min), twitter (15min staggered), market (5min), predictions (5min), backfill (30min)");
 
   // Run initial fetch on startup
   setTimeout(async () => {
