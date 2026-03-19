@@ -45,10 +45,14 @@ export function useWalletDiscovery() {
         // ignore
       }
 
-      // If MWA is available but no known wallets were detected,
-      // the device likely has Seeker's built-in wallet or another MWA wallet
-      if (hasMwaSupport && found.length === 0) {
-        found.push(SEEKER_WALLET);
+      // Always show Seeker wallet when MWA is available — it's the native
+      // Solana phone wallet and should always be an option, not just a fallback.
+      if (hasMwaSupport) {
+        const hasSeekerAlready = found.some((w) => w.id === SEEKER_WALLET.id);
+        if (!hasSeekerAlready) {
+          // Seeker goes first — it's the native wallet on Seeker devices
+          found.unshift(SEEKER_WALLET);
+        }
       }
 
       if (!cancelled) {
