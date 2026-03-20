@@ -19,9 +19,10 @@ export default function Home() {
               Midnight
             </span>
           </div>
-          {/* TODO: swap href to Typeform waitlist URL */}
           <a
-            href="#"
+            href="https://form.typeform.com/to/lAIai6px"
+            target="_blank"
+            rel="noopener noreferrer"
             className="bg-[#4C8BD0] text-white font-sans font-medium text-xs px-5 py-2.5 rounded-full hover:bg-[#5a9de0] active:scale-[0.97] transition-[transform,background-color] duration-150"
           >
             Join Waitlist
@@ -55,9 +56,10 @@ export default function Home() {
               predictions. All in one place.
             </p>
 
-            {/* TODO: swap href to Typeform waitlist URL */}
             <a
-              href="#"
+              href="https://form.typeform.com/to/lAIai6px"
+              target="_blank"
+              rel="noopener noreferrer"
               className="w-max bg-[#4C8BD0] text-white font-sans font-medium text-sm py-4 px-8 rounded-full hover:bg-[#5a9de0] active:scale-[0.97] transition-[transform,background-color] duration-150"
             >
               Join Waitlist
