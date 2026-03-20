@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import PhoneMockup from "@/components/PhoneMockup";
 
 export default function Home() {
@@ -7,7 +8,7 @@ export default function Home() {
       {/* Nav */}
       <nav className="w-full border-b border-white/[0.06] bg-black/80 backdrop-blur-xl z-50 sticky top-0">
         <div className="max-w-[1440px] mx-auto px-6 md:px-8 h-16 flex justify-between items-center">
-          <div className="flex items-center gap-2.5">
+          <Link href="/" className="flex items-center gap-2.5">
             <Image
               src="/logo.png"
               alt="Midnight"
@@ -18,7 +19,7 @@ export default function Home() {
             <span className="text-base font-brand font-medium tracking-tight text-[#f4f4f5]">
               Midnight
             </span>
-          </div>
+          </Link>
           <a
             href="https://form.typeform.com/to/lAIai6px"
             target="_blank"
