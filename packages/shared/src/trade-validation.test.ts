@@ -144,10 +144,11 @@ describe("formatResolutionCountdown", () => {
 });
 
 describe("formatCompactVolume", () => {
-  it("formats millions", () => expect(formatCompactVolume(362_000_000_000_000)).toBe("$362M"));
-  it("formats thousands", () => expect(formatCompactVolume(50_000_000_000)).toBe("$50K"));
-  it("formats small amounts", () => expect(formatCompactVolume(50_000_000)).toBe("$50"));
+  it("formats millions", () => expect(formatCompactVolume(362_000_000)).toBe("$362M"));
+  it("formats thousands", () => expect(formatCompactVolume(50_000)).toBe("$50K"));
+  it("formats small amounts", () => expect(formatCompactVolume(50)).toBe("$50"));
   it("returns null for zero", () => expect(formatCompactVolume(0)).toBeNull());
+  it("formats real Jupiter volume", () => expect(formatCompactVolume(1_610_832)).toBe("$1.6M"));
 });
 
 describe("formatCompactDate", () => {
@@ -166,6 +167,6 @@ describe("formatCompactDate", () => {
 });
 
 describe("computeLiquiditySpread", () => {
-  it("computes spread in USD", () => expect(computeLiquiditySpread({ buyYesPriceUsd: 730_000, sellYesPriceUsd: 750_000 })).toBeCloseTo(0.02));
+  it("computes spread as buy minus sell", () => expect(computeLiquiditySpread({ buyYesPriceUsd: 86_000, sellYesPriceUsd: 85_000 })).toBeCloseTo(0.001));
   it("returns 0 for zero prices", () => expect(computeLiquiditySpread({ buyYesPriceUsd: 0, sellYesPriceUsd: 0 })).toBe(0));
 });

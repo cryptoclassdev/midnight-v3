@@ -18,6 +18,8 @@ const ARTICLE_SELECT = {
   originalTitle: true,
   imageUrl: true,
   imageBlurhash: true,
+  sourceType: true,
+  tweetId: true,
   publishedAt: true,
   createdAt: true,
 } as const;

@@ -4,17 +4,32 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "staging": {
+      "android": {
+        "buildType": "apk"
+      },
+      "distribution": "internal",
+      "channel": "staging",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://mintfeed-api-staging.up.railway.app"
+      }
+    },
     "preview": {
       "android": {
         "buildType": "apk"
       },
       "distribution": "internal",
+      "channel": "preview",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://mintfeed-api-production.up.railway.app"
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://mintfeed-api-production.up.railway.app"
+      }
     }
   }
 }

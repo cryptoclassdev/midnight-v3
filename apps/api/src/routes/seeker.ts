@@ -56,7 +56,7 @@ async function checkSGTOwnership(owner: PublicKey): Promise<boolean> {
     }),
   });
 
-  const data = await response.json();
+  const data = (await response.json()) as { result?: { items?: unknown[] } };
   const assets = data?.result?.items;
 
   if (!Array.isArray(assets)) {

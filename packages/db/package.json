@@ -8,6 +8,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed-twitter": "tsx prisma/seed-twitter-sources.ts",
     "db:fetch-markets": "tsx prisma/seed.ts --fetch-only",
     "db:cleanup-multi-market-events": "tsx prisma/cleanup-multi-market-events.ts",
     "lint": "tsc --noEmit"
