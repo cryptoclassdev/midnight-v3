@@ -1,184 +1,138 @@
-import {
-  AppleLogo,
-  GooglePlayLogo,
-  User,
-  DeviceMobile,
-  BookOpen,
-  Coins,
-  TwitterLogo,
-  DiscordLogo,
-} from "@phosphor-icons/react/dist/ssr";
+import { DeviceMobile, BookOpen, Coins } from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
 import PhoneMockup from "@/components/PhoneMockup";
+
+const marqueeItems = [
+  { accent: "blue" as const, label: "READ → PREDICT → BET" },
+  { accent: "gray" as const, label: "THE FEED IS THE TRADING INTERFACE" },
+  { accent: "mint" as const, label: "60 WORDS. ONE POSITION." },
+  { accent: "blue" as const, label: "LIVE ON SOLANA MAINNET" },
+  { accent: "gray" as const, label: "SIGNAL, NOT NOISE" },
+  { accent: "mint" as const, label: "YES / NO. BEFORE THE MARKET MOVES." },
+];
+
+const accentColor = {
+  blue: "text-[#4C8BD0]",
+  mint: "text-[#00D4AA]",
+  gray: "text-[#444444]",
+};
 
 export default function Home() {
   return (
     <>
       {/* Nav */}
-      <nav className="w-full border-b border-[#ffffff10] bg-[#000000]/80 backdrop-blur-xl z-50 sticky top-0">
-        <div className="max-w-[1440px] mx-auto px-8 py-5 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="Midnight" width={28} height={28} className="rounded-lg" />
+      <nav className="w-full border-b border-white/[0.06] bg-black/80 backdrop-blur-xl z-50 sticky top-0">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-8 h-16 flex justify-between items-center">
+          <div className="flex items-center gap-2.5">
+            <Image
+              src="/logo.png"
+              alt="Midnight"
+              width={28}
+              height={28}
+              className="rounded-lg"
+            />
             <span className="text-base font-brand font-medium tracking-tight text-[#f4f4f5]">
               Midnight
             </span>
           </div>
-          <div className="hidden md:flex items-center gap-10 font-sans text-xs font-medium">
-            <a
-              href="#download"
-              className="bg-[#4C8BD0] text-white px-5 py-2 rounded-full hover:bg-[#5a9de0] active:scale-[0.97] transition-[transform,background-color] duration-150"
-            >
-              Get App
-            </a>
-          </div>
+          {/* TODO: swap href to Typeform waitlist URL */}
+          <a
+            href="#"
+            className="bg-[#4C8BD0] text-white font-sans font-medium text-xs px-5 py-2.5 rounded-full hover:bg-[#5a9de0] active:scale-[0.97] transition-[transform,background-color] duration-150"
+          >
+            Join Waitlist
+          </a>
         </div>
       </nav>
 
       {/* Hero */}
-      <header className="w-full relative overflow-hidden bg-[#000000] border-b border-[#ffffff10] min-h-[90vh] flex items-center">
+      <header className="w-full relative overflow-hidden bg-black border-b border-white/[0.06] min-h-[92vh] flex items-center">
         <div className="absolute inset-0 bg-glow-top opacity-100 pointer-events-none" />
 
-        <div className="max-w-[1440px] mx-auto px-8 py-20 w-full grid grid-cols-1 lg:grid-cols-12 gap-16 items-center relative z-10">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-8 py-24 w-full grid grid-cols-1 lg:grid-cols-12 gap-16 items-center relative z-10">
           {/* Left */}
-          <div className="lg:col-span-7 flex flex-col gap-10">
-            <div className="inline-flex items-center gap-3 bg-transparent py-2 w-max">
+          <div className="lg:col-span-6 flex flex-col gap-8">
+            <div className="inline-flex items-center gap-2.5 w-max">
               <span className="w-1.5 h-1.5 bg-[#00D4AA] rounded-full animate-pulse-slow" />
-              <span className="font-mono text-[9px] font-normal uppercase tracking-[0.2em] text-[#a1a1aa]">
+              <span className="font-mono text-[9px] font-normal uppercase tracking-[0.2em] text-[#555555]">
                 Live on Solana Mainnet
               </span>
             </div>
 
-            <h1 className="text-7xl sm:text-8xl lg:text-[110px] font-anton leading-[0.95] text-[#f4f4f5]">
-              Read <span className="text-[#888888]">less.</span>
+            <h1 className="text-7xl sm:text-8xl lg:text-[108px] font-anton leading-[0.92] text-[#f4f4f5]">
+              Read <span className="text-[#666666]">less.</span>
               <br />
               Predict <span className="text-[#00D4AA]">more.</span>
             </h1>
 
-            <p className="font-mono text-[10px] sm:text-[11px] text-[#888888] max-w-md leading-[2.2] tracking-[0.15em] uppercase border-none pl-0 py-2 mt-4">
-              Crypto and AI alpha distilled to the absolute essentials. Read the
-              facts in seconds. Place informed bets instantly on outcomes.
+            <p className="text-[#777777] text-[15px] font-sans leading-7 max-w-md">
+              Crypto moves on information asymmetry. The people who win process
+              signal faster. Midnight compresses the loop — read, predict, bet —
+              before the trade is gone.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
+            <div className="flex flex-col sm:flex-row gap-3 mt-2">
+              {/* TODO: swap href to Typeform waitlist URL */}
               <a
-                href="#download"
-                className="bg-[#4C8BD0] text-white font-sans font-medium text-sm py-4 px-8 rounded-full hover:bg-[#5a9de0] active:scale-[0.97] transition-[transform,background-color] duration-150 flex items-center justify-center gap-2"
+                href="#"
+                className="bg-[#4C8BD0] text-white font-sans font-medium text-sm py-4 px-8 rounded-full hover:bg-[#5a9de0] active:scale-[0.97] transition-[transform,background-color] duration-150 flex items-center justify-center gap-2.5"
               >
-                <AppleLogo weight="fill" className="text-lg" />
-                App Store
+                Join Waitlist
               </a>
-              <a
-                href="#download"
-                className="bg-transparent border border-[#ffffff20] text-[#f4f4f5] font-sans font-medium text-sm py-4 px-8 rounded-full hover:bg-[#ffffff05] active:scale-[0.97] transition-[transform,background-color] duration-150 flex items-center justify-center gap-2"
-              >
-                <GooglePlayLogo weight="fill" className="text-lg" />
-                Google Play
-              </a>
-            </div>
-
-            <div className="flex items-center gap-4 mt-8 font-mono text-[9px] text-[#888888] uppercase tracking-[0.15em]">
-              <div className="flex -space-x-2">
-                <div className="w-8 h-8 rounded-full border border-[#111111] bg-[#222222] flex items-center justify-center text-[#888888] text-xs">
-                  <User weight="fill" />
-                </div>
-                <div className="w-8 h-8 rounded-full border border-[#111111] bg-[#333333] flex items-center justify-center text-[#888888] text-xs">
-                  <User weight="fill" />
-                </div>
-                <div className="w-8 h-8 rounded-full border border-[#111111] bg-[#444444] flex items-center justify-center text-[#888888] text-xs">
-                  <User weight="fill" />
-                </div>
-              </div>
-              <div>
-                <span className="text-[#00D4AA] tabular-nums">50K+</span> Traders already
-                predicting
-              </div>
             </div>
           </div>
 
           {/* Right — Phone Mockup */}
-          <div className="lg:col-span-5 flex justify-center relative mt-20 lg:mt-0">
-            {/* Blue outer glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[700px] bg-glow-top opacity-30 blur-[120px] rounded-full pointer-events-none" />
-            {/* Mint inner glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[500px] bg-glow-center opacity-80 blur-[80px] rounded-full pointer-events-none" />
-
+          <div className="lg:col-span-6 flex justify-center lg:justify-end relative mt-16 lg:mt-0">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[680px] bg-glow-top opacity-25 blur-[120px] rounded-full pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[480px] bg-glow-center opacity-70 blur-[80px] rounded-full pointer-events-none" />
             <PhoneMockup />
-
           </div>
         </div>
       </header>
 
-      {/* Marquee */}
-      <div className="w-full bg-[#000000] py-6 overflow-hidden flex whitespace-nowrap border-b border-[#ffffff10] relative z-20">
-        <div className="flex animate-marquee font-mono text-[10px] text-[#666666] tracking-[0.2em] uppercase">
-          <span className="mx-12 text-[#4C8BD0]">
-            •{" "}
-            <span className="text-[#888888] ml-4">60-WORD NEWS SUMMARIES</span>
-          </span>
-          <span className="mx-12 text-[#4C8BD0]">
-            •{" "}
-            <span className="text-[#888888] ml-4">
-              NO FLUFF, JUST THE FACTS
+      {/* Marquee — single doubled-list approach for seamless loop */}
+      <div className="w-full bg-black py-5 overflow-hidden border-b border-white/[0.06] relative z-20">
+        <div className="flex whitespace-nowrap animate-marquee">
+          {[...marqueeItems, ...marqueeItems].map((item, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center gap-3.5 mx-10 font-mono text-[9px] uppercase tracking-[0.22em]"
+            >
+              <span className={accentColor[item.accent]}>•</span>
+              <span className="text-[#444444]">{item.label}</span>
             </span>
-          </span>
-          <span className="mx-12 text-[#4C8BD0]">
-            •{" "}
-            <span className="text-[#888888] ml-4">
-              GET INFORMED IN SECONDS, NOT MINUTES
-            </span>
-          </span>
-          <span className="mx-12 text-[#4C8BD0]">
-            •{" "}
-            <span className="text-[#00D4AA] ml-4">PLACE INFORMED BETS</span>
-          </span>
-          <span className="mx-12 text-[#4C8BD0]">
-            •{" "}
-            <span className="text-[#888888] ml-4">BUILT ON SOLANA</span>
-          </span>
-        </div>
-        <div className="flex animate-marquee font-mono text-[10px] text-[#666666] tracking-[0.2em] uppercase absolute top-6 left-[100%]">
-          <span className="mx-12 text-[#4C8BD0]">
-            •{" "}
-            <span className="text-[#888888] ml-4">60-WORD NEWS SUMMARIES</span>
-          </span>
-          <span className="mx-12 text-[#4C8BD0]">
-            •{" "}
-            <span className="text-[#888888] ml-4">
-              NO FLUFF, JUST THE FACTS
-            </span>
-          </span>
-          <span className="mx-12 text-[#4C8BD0]">
-            •{" "}
-            <span className="text-[#888888] ml-4">
-              GET INFORMED IN SECONDS, NOT MINUTES
-            </span>
-          </span>
-          <span className="mx-12 text-[#4C8BD0]">
-            •{" "}
-            <span className="text-[#00D4AA] ml-4">PLACE INFORMED BETS</span>
-          </span>
-          <span className="mx-12 text-[#4C8BD0]">
-            •{" "}
-            <span className="text-[#888888] ml-4">BUILT ON SOLANA</span>
-          </span>
+          ))}
         </div>
       </div>
 
       {/* Stats Bar */}
-      <section className="w-full bg-[#030303] border-b border-[#ffffff08] py-12">
-        <div className="max-w-[1440px] mx-auto px-8">
-          <div className="grid grid-cols-3 divide-x divide-[#ffffff08]">
+      <section className="w-full bg-[#030303] border-b border-white/[0.04] py-14">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-8">
+          <div className="grid grid-cols-3 divide-x divide-white/[0.04]">
             <div className="flex flex-col items-center gap-2 px-8">
-              <span className="font-anton text-4xl text-[#f4f4f5] tabular-nums">50K+</span>
-              <span className="font-mono text-[9px] text-[#555555] uppercase tracking-[0.2em]">Active Traders</span>
+              <span className="font-anton text-5xl text-[#f4f4f5] tabular-nums">
+                60
+              </span>
+              <span className="font-mono text-[8px] text-[#3a3a3a] uppercase tracking-[0.22em] mt-1">
+                Words Per Story
+              </span>
             </div>
             <div className="flex flex-col items-center gap-2 px-8">
-              <span className="font-anton text-4xl text-[#f4f4f5] tabular-nums">60</span>
-              <span className="font-mono text-[9px] text-[#555555] uppercase tracking-[0.2em]">Words Per Summary</span>
+              <span className="font-anton text-5xl text-[#f4f4f5] tabular-nums">
+                15 MIN
+              </span>
+              <span className="font-mono text-[8px] text-[#3a3a3a] uppercase tracking-[0.22em] mt-1">
+                Feed Refresh
+              </span>
             </div>
             <div className="flex flex-col items-center gap-2 px-8">
-              <span className="font-anton text-4xl text-[#f4f4f5] tabular-nums">&lt;2s</span>
-              <span className="font-mono text-[9px] text-[#555555] uppercase tracking-[0.2em]">To Get Informed</span>
+              <span className="font-anton text-5xl text-[#f4f4f5] tabular-nums">
+                SOL
+              </span>
+              <span className="font-mono text-[8px] text-[#3a3a3a] uppercase tracking-[0.22em] mt-1">
+                Prediction Layer
+              </span>
             </div>
           </div>
         </div>
@@ -187,76 +141,75 @@ export default function Home() {
       {/* How it Works */}
       <section
         id="how-it-works"
-        className="w-full bg-[#000000] py-40 border-b border-[#ffffff10] relative"
+        className="w-full bg-black py-40 border-b border-white/[0.06] relative"
       >
-        <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.04] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:40px_40px] opacity-[0.025] pointer-events-none" />
 
-        <div className="max-w-[1440px] mx-auto px-8 relative z-10">
-          <div className="mb-24 flex flex-col md:flex-row justify-between items-end gap-8">
-            <h2 className="text-5xl md:text-6xl font-medium tracking-tight text-[#f4f4f5] leading-[1]">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-8 relative z-10">
+          <div className="mb-20 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+            <h2 className="text-6xl md:text-7xl font-anton leading-[0.92] text-[#f4f4f5]">
               How it works
             </h2>
-            <p className="font-mono text-[10px] text-[#888888] tracking-[0.15em] uppercase border-none pl-0 pb-2 max-w-xs">
-              Maximum Information. Minimum Time. The protocol for modern traders.
+            <p className="text-[#555555] text-sm font-sans leading-relaxed max-w-xs">
+              The loop: read the signal, form a view, place the bet — before the
+              market moves.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 bg-transparent border-none">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Step 1 */}
-            <div className="p-12 bg-[#ffffff03] border border-[#ffffff0a] rounded-3xl relative group hover:bg-[#4C8BD0]/[0.03] hover:border-[#4C8BD0]/20 transition-colors duration-300 overflow-hidden">
-              <div className="absolute top-10 right-10 text-[10px] font-mono text-[#555555] uppercase tracking-[0.2em]">
+            <div className="p-10 bg-white/[0.02] border border-white/[0.06] rounded-2xl relative group hover:bg-[#4C8BD0]/[0.03] hover:border-[#4C8BD0]/[0.18] transition-colors duration-300 overflow-hidden">
+              <span className="absolute top-8 right-8 font-mono text-[8px] text-[#2a2a2a] uppercase tracking-[0.22em]">
                 No. 01
-              </div>
-              <div className="relative z-10 flex flex-col h-full mt-10">
-                <div className="w-12 h-12 rounded-full border border-[#4C8BD0]/30 bg-transparent text-[#4C8BD0] flex items-center justify-center mb-12 shadow-none">
-                  <DeviceMobile className="text-xl" />
+              </span>
+              <div className="flex flex-col h-full mt-4">
+                <div className="w-10 h-10 rounded-full border border-[#4C8BD0]/25 text-[#4C8BD0] flex items-center justify-center mb-10">
+                  <DeviceMobile size={18} />
                 </div>
-                <h3 className="text-2xl font-medium text-[#f4f4f5] mb-6 tracking-tight">
+                <h3 className="text-lg font-semibold text-[#f4f4f5] mb-3 tracking-tight">
                   Open &amp; Swipe
                 </h3>
-                <p className="text-[#888888] font-mono text-[10px] uppercase tracking-[0.15em] leading-[2.2] border-none pl-0 mt-auto">
-                  Dive into a vertical feed of ultra-concise news. Swipe up to
-                  move to the next story instantly. No loading, no waiting.
+                <p className="text-[#555555] text-sm font-sans leading-6">
+                  Swipe through market-moving stories the moment they break. The
+                  feed is the trading interface.
                 </p>
               </div>
             </div>
 
             {/* Step 2 */}
-            <div className="p-12 bg-[#ffffff03] border border-[#ffffff0a] rounded-3xl relative group hover:bg-[#4C8BD0]/[0.03] hover:border-[#4C8BD0]/20 transition-colors duration-300 overflow-hidden">
-              <div className="absolute top-10 right-10 text-[10px] font-mono text-[#555555] uppercase tracking-[0.2em]">
+            <div className="p-10 bg-white/[0.02] border border-white/[0.06] rounded-2xl relative group hover:bg-[#4C8BD0]/[0.03] hover:border-[#4C8BD0]/[0.18] transition-colors duration-300 overflow-hidden">
+              <span className="absolute top-8 right-8 font-mono text-[8px] text-[#2a2a2a] uppercase tracking-[0.22em]">
                 No. 02
-              </div>
-              <div className="relative z-10 flex flex-col h-full mt-10">
-                <div className="w-12 h-12 rounded-full border border-[#4C8BD0]/30 bg-transparent text-[#4C8BD0] flex items-center justify-center mb-12 shadow-none">
-                  <BookOpen className="text-xl" />
+              </span>
+              <div className="flex flex-col h-full mt-4">
+                <div className="w-10 h-10 rounded-full border border-[#4C8BD0]/25 text-[#4C8BD0] flex items-center justify-center mb-10">
+                  <BookOpen size={18} />
                 </div>
-                <h3 className="text-2xl font-medium text-[#f4f4f5] mb-6 tracking-tight">
+                <h3 className="text-lg font-semibold text-[#f4f4f5] mb-3 tracking-tight">
                   Read 60 Words
                 </h3>
-                <p className="text-[#888888] font-mono text-[10px] uppercase tracking-[0.15em] leading-[2.2] border-none pl-0 mt-auto">
-                  No fluff, no filler. Just the critical information you need
-                  regarding Crypto and AI, curated by experts. Read the facts in
-                  seconds.
+                <p className="text-[#555555] text-sm font-sans leading-6">
+                  60 words. That is all you need to form a view. Signal only,
+                  nothing else.
                 </p>
               </div>
             </div>
 
             {/* Step 3 */}
-            <div className="p-12 bg-[#00D4AA]/[0.02] border border-[#00D4AA]/10 rounded-3xl relative group hover:bg-[#00D4AA]/[0.04] hover:border-[#00D4AA]/20 transition-colors duration-300 overflow-hidden">
-              <div className="absolute top-10 right-10 text-[10px] font-mono text-[#00D4AA] uppercase tracking-[0.2em]">
+            <div className="p-10 bg-[#4C8BD0]/[0.02] border border-[#4C8BD0]/[0.08] rounded-2xl relative group hover:bg-[#4C8BD0]/[0.04] hover:border-[#4C8BD0]/[0.18] transition-colors duration-300 overflow-hidden">
+              <span className="absolute top-8 right-8 font-mono text-[8px] text-[#4C8BD0]/40 uppercase tracking-[0.22em]">
                 No. 03
-              </div>
-              <div className="relative z-10 flex flex-col h-full mt-10">
-                <div className="w-12 h-12 rounded-full border border-[#00D4AA]/30 bg-transparent text-[#00D4AA] flex items-center justify-center mb-12 shadow-none">
-                  <Coins className="text-xl" />
+              </span>
+              <div className="flex flex-col h-full mt-4">
+                <div className="w-10 h-10 rounded-full border border-[#4C8BD0]/25 text-[#4C8BD0] flex items-center justify-center mb-10">
+                  <Coins size={18} />
                 </div>
-                <h3 className="text-2xl font-medium text-[#00D4AA] mb-6 tracking-tight">
+                <h3 className="text-lg font-semibold text-[#4C8BD0] mb-3 tracking-tight">
                   Place Bets
                 </h3>
-                <p className="text-[#888888] font-mono text-[10px] uppercase tracking-[0.15em] leading-[2.2] border-none pl-0 mt-auto">
-                  Turn knowledge into action. Tap YES or NO to place informed
-                  bets on story outcomes using prediction markets built directly
-                  on Solana.
+                <p className="text-[#555555] text-sm font-sans leading-6">
+                  Tap YES or NO before you swipe away. Prediction markets settle
+                  on Solana in seconds.
                 </p>
               </div>
             </div>
@@ -264,167 +217,179 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Download CTA */}
+      {/* The Edge — feature grid */}
+      <section className="w-full bg-[#030303] py-32 border-b border-white/[0.04]">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-8">
+          <div className="mb-14 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <span className="font-mono text-[8px] uppercase tracking-[0.22em] text-[#444444]">
+                The Advantage
+              </span>
+              <h2 className="font-anton text-5xl md:text-6xl leading-[0.92] text-[#f4f4f5] mt-3">
+                Built for the edge.
+              </h2>
+            </div>
+            <p className="text-[#444444] text-sm font-sans leading-relaxed max-w-xs">
+              Every feature is a speed multiplier. Every screen removes one more
+              reason to hesitate.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/[0.04] rounded-2xl overflow-hidden">
+            <div className="bg-[#030303] p-10 flex flex-col gap-3 hover:bg-white/[0.02] transition-colors duration-300">
+              <div className="font-mono text-[8px] text-[#2a2a2a] uppercase tracking-[0.2em]">
+                01
+              </div>
+              <h3 className="font-anton text-2xl text-[#f4f4f5] leading-tight mt-2">
+                AI Distilled Signal
+              </h3>
+              <p className="text-[#444444] text-sm font-sans leading-relaxed mt-1">
+                Gemini strips every story to 60 words. Pure signal. No filler,
+                no fluff.
+              </p>
+            </div>
+            <div className="bg-[#030303] p-10 flex flex-col gap-3 hover:bg-white/[0.02] transition-colors duration-300">
+              <div className="font-mono text-[8px] text-[#2a2a2a] uppercase tracking-[0.2em]">
+                02
+              </div>
+              <h3 className="font-anton text-2xl text-[#f4f4f5] leading-tight mt-2">
+                Embedded Markets
+              </h3>
+              <p className="text-[#444444] text-sm font-sans leading-relaxed mt-1">
+                Prediction markets live inside the feed. Read a headline, place
+                a position — one tap.
+              </p>
+            </div>
+            <div className="bg-[#030303] p-10 flex flex-col gap-3 hover:bg-white/[0.02] transition-colors duration-300">
+              <div className="font-mono text-[8px] text-[#2a2a2a] uppercase tracking-[0.2em]">
+                03
+              </div>
+              <h3 className="font-anton text-2xl text-[#f4f4f5] leading-tight mt-2">
+                Live Price Data
+              </h3>
+              <p className="text-[#444444] text-sm font-sans leading-relaxed mt-1">
+                Top 20 coins updated every 5 minutes. Market context alongside
+                every story.
+              </p>
+            </div>
+            <div className="bg-[#030303] p-10 flex flex-col gap-3 hover:bg-white/[0.02] transition-colors duration-300">
+              <div className="font-mono text-[8px] text-[#2a2a2a] uppercase tracking-[0.2em]">
+                04
+              </div>
+              <h3 className="font-anton text-2xl text-[#f4f4f5] leading-tight mt-2">
+                Solana Speed
+              </h3>
+              <p className="text-[#444444] text-sm font-sans leading-relaxed mt-1">
+                Instant settlements on Solana mainnet. The fastest prediction
+                layer in crypto.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
       <section
         id="download"
-        className="w-full bg-[#000000] border-b border-[#ffffff10] py-40 px-6 relative overflow-hidden"
+        className="w-full bg-black py-40 px-6 relative overflow-hidden"
       >
-        <div className="absolute inset-0 bg-glow-bottom opacity-80 pointer-events-none" />
+        <div className="absolute inset-0 bg-glow-bottom opacity-70 pointer-events-none" />
 
-        <div className="max-w-4xl mx-auto flex flex-col items-center justify-center text-center relative z-10">
-          <div className="mb-10 flex items-center gap-3 bg-transparent border-none px-0 py-0 shadow-none">
-            <span className="w-1.5 h-1.5 bg-[#00D4AA] rounded-full" />
-            <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#a1a1aa]">
-              Join 50,000+ Traders
+        <div className="max-w-3xl mx-auto flex flex-col items-center justify-center text-center relative z-10">
+          <div className="flex items-center gap-2.5 mb-6">
+            <Image
+              src="/logo.png"
+              alt="Midnight"
+              width={40}
+              height={40}
+              className="rounded-xl"
+            />
+            <span className="text-2xl font-brand font-medium tracking-tight text-[#f4f4f5]">
+              Midnight
             </span>
           </div>
 
-          <h2 className="text-6xl md:text-8xl font-medium tracking-tight text-[#f4f4f5] leading-[1] mb-8">
-            Stop reading.
-            <br />
-            <span className="text-[#888888]">Start betting.</span>
+          <h2 className="text-6xl md:text-8xl font-anton leading-[0.92] text-[#f4f4f5]">
+            The information edge.
+          </h2>
+          <h2 className="text-6xl md:text-8xl font-anton leading-[0.92] text-[#555555] mb-8">
+            Delivered.
           </h2>
 
-          <p className="font-mono text-[10px] text-[#888888] max-w-md leading-[2] tracking-[0.15em] uppercase mb-16">
-            The alpha is waiting. Download Midnight to get informed in seconds
-            and trade on pure signal.
+          <p className="text-[#555555] text-sm font-sans leading-relaxed max-w-xs mb-10">
+            Crypto alpha in 60 words. One tap to take a position.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md justify-center">
-            <button className="flex-1 bg-[#4C8BD0] text-white font-sans font-medium text-sm py-4 px-6 rounded-full hover:bg-[#5a9de0] active:scale-[0.97] transition-[transform,background-color] duration-150 flex items-center justify-center gap-3 border-none shadow-[0_0_30px_rgba(76,139,208,0.20)]">
-              <AppleLogo weight="fill" className="text-xl" />
-              <div className="flex flex-col items-start text-left leading-none">
-                <span className="font-mono text-[8px] tracking-[0.15em] text-[#a0c4e8] mb-0.5 uppercase">
-                  Download on the
-                </span>
-                <span>App Store</span>
-              </div>
-            </button>
-            <button className="flex-1 bg-transparent border border-[#ffffff20] text-[#f4f4f5] font-sans font-medium text-sm py-4 px-6 rounded-full hover:bg-[#ffffff05] active:scale-[0.97] transition-[transform,background-color] duration-150 flex items-center justify-center gap-3 shadow-none">
-              <GooglePlayLogo weight="fill" className="text-xl" />
-              <div className="flex flex-col items-start text-left leading-none">
-                <span className="font-mono text-[8px] tracking-[0.15em] text-[#888888] mb-0.5 uppercase">
-                  GET IT ON
-                </span>
-                <span>Google Play</span>
-              </div>
-            </button>
-          </div>
-          <p className="mt-8 font-mono text-[9px] text-[#555555] uppercase tracking-[0.15em] text-center">
-            No wallet required to read · Solana-powered prediction markets
+          {/* TODO: swap href to Typeform waitlist URL */}
+          <a
+            href="#"
+            className="bg-[#4C8BD0] text-white font-sans font-medium text-sm py-4 px-10 rounded-full hover:bg-[#5a9de0] active:scale-[0.97] transition-[transform,background-color] duration-150 shadow-[0_0_40px_rgba(76,139,208,0.15)]"
+          >
+            Join Waitlist →
+          </a>
+
+          <p className="mt-8 font-mono text-[8px] text-[#333333] uppercase tracking-[0.18em]">
+            No wallet required to read · Live on Solana
           </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="w-full bg-[#000000] pt-24 pb-12 border-none">
-        <div className="max-w-[1440px] mx-auto px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-24">
-            <div className="md:col-span-2">
-              <div className="flex items-center gap-3 mb-8">
-                <Image src="/logo.png" alt="Midnight" width={32} height={32} className="rounded-lg" />
-                <span className="text-lg font-brand font-medium tracking-tight text-[#f4f4f5]">
-                  Midnight
-                </span>
-              </div>
-              <p className="font-mono text-[10px] text-[#555555] max-w-xs mb-8 uppercase tracking-[0.15em] leading-[2.2]">
-                Maximum information. Minimum time. The protocol for the modern
-                trader.
-              </p>
-              <div className="flex gap-3">
-                <a
-                  href="#"
-                  className="w-11 h-11 rounded-full border border-[#ffffff10] flex items-center justify-center text-[#888888] hover:text-[#f4f4f5] hover:bg-[#ffffff05] transition-colors bg-transparent"
-                >
-                  <TwitterLogo weight="fill" className="text-lg" />
-                </a>
-                <a
-                  href="#"
-                  className="w-11 h-11 rounded-full border border-[#ffffff10] flex items-center justify-center text-[#888888] hover:text-[#f4f4f5] hover:bg-[#ffffff05] transition-colors bg-transparent"
-                >
-                  <DiscordLogo weight="fill" className="text-lg" />
-                </a>
-              </div>
+      <footer className="w-full bg-[#030303] border-t border-white/[0.04] pt-12 pb-8">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-8">
+          {/* Row 1 */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2.5">
+              <Image
+                src="/logo.png"
+                alt="Midnight"
+                width={24}
+                height={24}
+                className="rounded-lg"
+              />
+              <span className="text-sm font-brand font-medium tracking-tight text-[#f4f4f5]">
+                Midnight
+              </span>
             </div>
 
-            <div>
-              <h4 className="font-sans text-xs font-medium text-[#a1a1aa] mb-6">
-                Protocol
-              </h4>
-              <ul className="flex flex-col gap-3 font-sans text-sm text-[#f4f4f5]">
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-[#a1a1aa] transition-colors"
-                  >
-                    How it Works
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-[#a1a1aa] transition-colors"
-                  >
-                    Markets
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-[#a1a1aa] transition-colors"
-                  >
-                    Leaderboard
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-[#a1a1aa] transition-colors"
-                  >
-                    Download
-                  </a>
-                </li>
-              </ul>
+            <div className="flex items-center gap-5">
+              <a
+                href="/terms"
+                className="text-[#555555] text-xs font-sans hover:text-[#f4f4f5] transition-colors"
+              >
+                Terms
+              </a>
+              <a
+                href="/privacy"
+                className="text-[#555555] text-xs font-sans hover:text-[#f4f4f5] transition-colors"
+              >
+                Privacy
+              </a>
             </div>
 
-            <div>
-              <h4 className="font-sans text-xs font-medium text-[#a1a1aa] mb-6">
-                Legal
-              </h4>
-              <ul className="flex flex-col gap-3 font-sans text-sm text-[#f4f4f5]">
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-[#a1a1aa] transition-colors"
-                  >
-                    Terms of Service
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-[#a1a1aa] transition-colors"
-                  >
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-[#a1a1aa] transition-colors"
-                  >
-                    Risk Disclosure
-                  </a>
-                </li>
-              </ul>
-            </div>
+            <a
+              href="#"
+              className="w-9 h-9 rounded-full border border-white/[0.07] flex items-center justify-center text-[#444444] hover:text-[#f4f4f5] hover:border-white/[0.14] transition-colors"
+              aria-label="X (Twitter)"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.259 5.622 5.905-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+            </a>
           </div>
 
-          <div className="border-t border-[#4C8BD0]/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 font-mono text-[9px] text-[#555555] uppercase tracking-[0.2em]">
-            <div className="flex items-center gap-3">
-              <span>&copy; 2025 Midnight Tech. All rights reserved.</span>
-            </div>
-            <div className="flex items-center gap-2 text-[#888888]">
+          {/* Row 2 */}
+          <div className="border-t border-[#4C8BD0]/[0.07] pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <span className="font-mono text-[8px] text-[#2a2a2a] uppercase tracking-[0.2em]">
+              © 2026 Midnight Tech. All rights reserved.
+            </span>
+            <div className="flex items-center gap-2 font-mono text-[8px] text-[#333333] uppercase tracking-[0.2em]">
               <div className="w-1.5 h-1.5 bg-[#00D4AA] rounded-full" />
               Systems Operational
             </div>
