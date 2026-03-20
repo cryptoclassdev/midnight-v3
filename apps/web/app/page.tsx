@@ -1,21 +1,5 @@
-import { DeviceMobile, BookOpen, Coins } from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
 import PhoneMockup from "@/components/PhoneMockup";
-
-const marqueeItems = [
-  { accent: "blue" as const, label: "READ → PREDICT → BET" },
-  { accent: "gray" as const, label: "THE FEED IS THE TRADING INTERFACE" },
-  { accent: "mint" as const, label: "60 WORDS. ONE POSITION." },
-  { accent: "blue" as const, label: "LIVE ON SOLANA MAINNET" },
-  { accent: "gray" as const, label: "SIGNAL, NOT NOISE" },
-  { accent: "mint" as const, label: "YES / NO. BEFORE THE MARKET MOVES." },
-];
-
-const accentColor = {
-  blue: "text-[#4C8BD0]",
-  mint: "text-[#00D4AA]",
-  gray: "text-[#444444]",
-};
 
 export default function Home() {
   return (
@@ -66,20 +50,18 @@ export default function Home() {
             </h1>
 
             <p className="text-[#777777] text-[15px] font-sans leading-7 max-w-md">
-              Crypto moves on information asymmetry. The people who win process
-              signal faster. Midnight compresses the loop — read, predict, bet —
-              before the trade is gone.
+              Midnight is a crypto news feed where every story is compressed to
+              60 words. Swipe through the feed, form a view, and place on-chain
+              predictions. All in one place.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 mt-2">
-              {/* TODO: swap href to Typeform waitlist URL */}
-              <a
-                href="#"
-                className="bg-[#4C8BD0] text-white font-sans font-medium text-sm py-4 px-8 rounded-full hover:bg-[#5a9de0] active:scale-[0.97] transition-[transform,background-color] duration-150 flex items-center justify-center gap-2.5"
-              >
-                Join Waitlist
-              </a>
-            </div>
+            {/* TODO: swap href to Typeform waitlist URL */}
+            <a
+              href="#"
+              className="w-max bg-[#4C8BD0] text-white font-sans font-medium text-sm py-4 px-8 rounded-full hover:bg-[#5a9de0] active:scale-[0.97] transition-[transform,background-color] duration-150"
+            >
+              Join Waitlist
+            </a>
           </div>
 
           {/* Right — Phone Mockup */}
@@ -91,149 +73,12 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Marquee — single doubled-list approach for seamless loop */}
-      <div className="w-full bg-black py-5 overflow-hidden border-b border-white/[0.06] relative z-20">
-        <div className="flex whitespace-nowrap animate-marquee">
-          {[...marqueeItems, ...marqueeItems].map((item, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-3.5 mx-10 font-mono text-[9px] uppercase tracking-[0.22em]"
-            >
-              <span className={accentColor[item.accent]}>•</span>
-              <span className="text-[#444444]">{item.label}</span>
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Stats Bar */}
-      <section className="w-full bg-[#030303] border-b border-white/[0.04] py-14">
+      {/* Features */}
+      <section className="w-full bg-[#030303] py-24 border-b border-white/[0.04]">
         <div className="max-w-[1440px] mx-auto px-6 md:px-8">
-          <div className="grid grid-cols-3 divide-x divide-white/[0.04]">
-            <div className="flex flex-col items-center gap-2 px-8">
-              <span className="font-anton text-5xl text-[#f4f4f5] tabular-nums">
-                60
-              </span>
-              <span className="font-mono text-[8px] text-[#3a3a3a] uppercase tracking-[0.22em] mt-1">
-                Words Per Story
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-2 px-8">
-              <span className="font-anton text-5xl text-[#f4f4f5] tabular-nums">
-                15 MIN
-              </span>
-              <span className="font-mono text-[8px] text-[#3a3a3a] uppercase tracking-[0.22em] mt-1">
-                Feed Refresh
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-2 px-8">
-              <span className="font-anton text-5xl text-[#f4f4f5] tabular-nums">
-                SOL
-              </span>
-              <span className="font-mono text-[8px] text-[#3a3a3a] uppercase tracking-[0.22em] mt-1">
-                Prediction Layer
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How it Works */}
-      <section
-        id="how-it-works"
-        className="w-full bg-black py-40 border-b border-white/[0.06] relative"
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:40px_40px] opacity-[0.025] pointer-events-none" />
-
-        <div className="max-w-[1440px] mx-auto px-6 md:px-8 relative z-10">
-          <div className="mb-20 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-            <h2 className="text-6xl md:text-7xl font-anton leading-[0.92] text-[#f4f4f5]">
-              How it works
-            </h2>
-            <p className="text-[#555555] text-sm font-sans leading-relaxed max-w-xs">
-              The loop: read the signal, form a view, place the bet — before the
-              market moves.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Step 1 */}
-            <div className="p-10 bg-white/[0.02] border border-white/[0.06] rounded-2xl relative group hover:bg-[#4C8BD0]/[0.03] hover:border-[#4C8BD0]/[0.18] transition-colors duration-300 overflow-hidden">
-              <span className="absolute top-8 right-8 font-mono text-[8px] text-[#2a2a2a] uppercase tracking-[0.22em]">
-                No. 01
-              </span>
-              <div className="flex flex-col h-full mt-4">
-                <div className="w-10 h-10 rounded-full border border-[#4C8BD0]/25 text-[#4C8BD0] flex items-center justify-center mb-10">
-                  <DeviceMobile size={18} />
-                </div>
-                <h3 className="text-lg font-semibold text-[#f4f4f5] mb-3 tracking-tight">
-                  Open &amp; Swipe
-                </h3>
-                <p className="text-[#555555] text-sm font-sans leading-6">
-                  Swipe through market-moving stories the moment they break. The
-                  feed is the trading interface.
-                </p>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="p-10 bg-white/[0.02] border border-white/[0.06] rounded-2xl relative group hover:bg-[#4C8BD0]/[0.03] hover:border-[#4C8BD0]/[0.18] transition-colors duration-300 overflow-hidden">
-              <span className="absolute top-8 right-8 font-mono text-[8px] text-[#2a2a2a] uppercase tracking-[0.22em]">
-                No. 02
-              </span>
-              <div className="flex flex-col h-full mt-4">
-                <div className="w-10 h-10 rounded-full border border-[#4C8BD0]/25 text-[#4C8BD0] flex items-center justify-center mb-10">
-                  <BookOpen size={18} />
-                </div>
-                <h3 className="text-lg font-semibold text-[#f4f4f5] mb-3 tracking-tight">
-                  Read 60 Words
-                </h3>
-                <p className="text-[#555555] text-sm font-sans leading-6">
-                  60 words. That is all you need to form a view. Signal only,
-                  nothing else.
-                </p>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="p-10 bg-[#4C8BD0]/[0.02] border border-[#4C8BD0]/[0.08] rounded-2xl relative group hover:bg-[#4C8BD0]/[0.04] hover:border-[#4C8BD0]/[0.18] transition-colors duration-300 overflow-hidden">
-              <span className="absolute top-8 right-8 font-mono text-[8px] text-[#4C8BD0]/40 uppercase tracking-[0.22em]">
-                No. 03
-              </span>
-              <div className="flex flex-col h-full mt-4">
-                <div className="w-10 h-10 rounded-full border border-[#4C8BD0]/25 text-[#4C8BD0] flex items-center justify-center mb-10">
-                  <Coins size={18} />
-                </div>
-                <h3 className="text-lg font-semibold text-[#4C8BD0] mb-3 tracking-tight">
-                  Place Bets
-                </h3>
-                <p className="text-[#555555] text-sm font-sans leading-6">
-                  Tap YES or NO before you swipe away. Prediction markets settle
-                  on Solana in seconds.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* The Edge — feature grid */}
-      <section className="w-full bg-[#030303] py-32 border-b border-white/[0.04]">
-        <div className="max-w-[1440px] mx-auto px-6 md:px-8">
-          <div className="mb-14 flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <span className="font-mono text-[8px] uppercase tracking-[0.22em] text-[#444444]">
-                The Advantage
-              </span>
-              <h2 className="font-anton text-5xl md:text-6xl leading-[0.92] text-[#f4f4f5] mt-3">
-                Built for the edge.
-              </h2>
-            </div>
-            <p className="text-[#444444] text-sm font-sans leading-relaxed max-w-xs">
-              Every feature is a speed multiplier. Every screen removes one more
-              reason to hesitate.
-            </p>
-          </div>
+          <h2 className="font-mono text-[9px] uppercase tracking-[0.22em] text-[#444444] mb-10">
+            Features
+          </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/[0.04] rounded-2xl overflow-hidden">
             <div className="bg-[#030303] p-10 flex flex-col gap-3 hover:bg-white/[0.02] transition-colors duration-300">
@@ -241,11 +86,10 @@ export default function Home() {
                 01
               </div>
               <h3 className="font-anton text-2xl text-[#f4f4f5] leading-tight mt-2">
-                AI Distilled Signal
+                60-Word Stories
               </h3>
               <p className="text-[#444444] text-sm font-sans leading-relaxed mt-1">
-                Gemini strips every story to 60 words. Pure signal. No filler,
-                no fluff.
+              60-word articles. Only signal, zero fluff.
               </p>
             </div>
             <div className="bg-[#030303] p-10 flex flex-col gap-3 hover:bg-white/[0.02] transition-colors duration-300">
@@ -253,11 +97,11 @@ export default function Home() {
                 02
               </div>
               <h3 className="font-anton text-2xl text-[#f4f4f5] leading-tight mt-2">
-                Embedded Markets
+                Prediction Markets
               </h3>
               <p className="text-[#444444] text-sm font-sans leading-relaxed mt-1">
-                Prediction markets live inside the feed. Read a headline, place
-                a position — one tap.
+                Each story has a prediction market attached. Read a headline,
+                Swipe to YES or NO.
               </p>
             </div>
             <div className="bg-[#030303] p-10 flex flex-col gap-3 hover:bg-white/[0.02] transition-colors duration-300">
@@ -265,11 +109,11 @@ export default function Home() {
                 03
               </div>
               <h3 className="font-anton text-2xl text-[#f4f4f5] leading-tight mt-2">
-                Live Price Data
+                All Solana Wallets
               </h3>
               <p className="text-[#444444] text-sm font-sans leading-relaxed mt-1">
-                Top 20 coins updated every 5 minutes. Market context alongside
-                every story.
+                Connect any Solana wallet to place predictions. Phantom,
+                Backpack, Solflare, and more.
               </p>
             </div>
             <div className="bg-[#030303] p-10 flex flex-col gap-3 hover:bg-white/[0.02] transition-colors duration-300">
@@ -277,60 +121,13 @@ export default function Home() {
                 04
               </div>
               <h3 className="font-anton text-2xl text-[#f4f4f5] leading-tight mt-2">
-                Solana Speed
+                Settles on Solana
               </h3>
               <p className="text-[#444444] text-sm font-sans leading-relaxed mt-1">
-                Instant settlements on Solana mainnet. The fastest prediction
-                layer in crypto.
+                Predictions settle on-chain.
               </p>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section
-        id="download"
-        className="w-full bg-black py-40 px-6 relative overflow-hidden"
-      >
-        <div className="absolute inset-0 bg-glow-bottom opacity-70 pointer-events-none" />
-
-        <div className="max-w-3xl mx-auto flex flex-col items-center justify-center text-center relative z-10">
-          <div className="flex items-center gap-2.5 mb-6">
-            <Image
-              src="/logo.png"
-              alt="Midnight"
-              width={40}
-              height={40}
-              className="rounded-xl"
-            />
-            <span className="text-2xl font-brand font-medium tracking-tight text-[#f4f4f5]">
-              Midnight
-            </span>
-          </div>
-
-          <h2 className="text-6xl md:text-8xl font-anton leading-[0.92] text-[#f4f4f5]">
-            The information edge.
-          </h2>
-          <h2 className="text-6xl md:text-8xl font-anton leading-[0.92] text-[#555555] mb-8">
-            Delivered.
-          </h2>
-
-          <p className="text-[#555555] text-sm font-sans leading-relaxed max-w-xs mb-10">
-            Crypto alpha in 60 words. One tap to take a position.
-          </p>
-
-          {/* TODO: swap href to Typeform waitlist URL */}
-          <a
-            href="#"
-            className="bg-[#4C8BD0] text-white font-sans font-medium text-sm py-4 px-10 rounded-full hover:bg-[#5a9de0] active:scale-[0.97] transition-[transform,background-color] duration-150 shadow-[0_0_40px_rgba(76,139,208,0.15)]"
-          >
-            Join Waitlist →
-          </a>
-
-          <p className="mt-8 font-mono text-[8px] text-[#333333] uppercase tracking-[0.18em]">
-            No wallet required to read · Live on Solana
-          </p>
         </div>
       </section>
 
@@ -385,14 +182,10 @@ export default function Home() {
           </div>
 
           {/* Row 2 */}
-          <div className="border-t border-[#4C8BD0]/[0.07] pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="border-t border-[#4C8BD0]/[0.07] pt-6">
             <span className="font-mono text-[8px] text-[#2a2a2a] uppercase tracking-[0.2em]">
               © 2026 Midnight Tech. All rights reserved.
             </span>
-            <div className="flex items-center gap-2 font-mono text-[8px] text-[#333333] uppercase tracking-[0.2em]">
-              <div className="w-1.5 h-1.5 bg-[#00D4AA] rounded-full" />
-              Systems Operational
-            </div>
           </div>
         </div>
       </footer>
