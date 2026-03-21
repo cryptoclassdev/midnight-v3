@@ -89,8 +89,8 @@ export default function Phone3D({ scrollProgress, children }: Props) {
       />
 
       <group ref={groupRef} position={[1.8, 0, 0]}>
-        {/* Phone body — metallic dark shell */}
-        <RoundedBox args={[2.4, 5.0, 0.15]} radius={0.28} smoothness={4}>
+        {/* Phone body — metallic dark shell (thin modern bezels) */}
+        <RoundedBox args={[2.22, 4.68, 0.15]} radius={0.24} smoothness={4}>
           <meshStandardMaterial
             color="#1a1a1e"
             metalness={0.85}
@@ -100,19 +100,19 @@ export default function Phone3D({ scrollProgress, children }: Props) {
 
         {/* Screen base (dark plane behind HTML) */}
         <mesh position={[0, 0, 0.076]}>
-          <planeGeometry args={[2.15, 4.6]} />
+          <planeGeometry args={[2.12, 4.56]} />
           <meshBasicMaterial color="#030303" />
         </mesh>
 
         {/* Dynamic Island */}
-        <mesh position={[0, 2.12, 0.077]}>
-          <planeGeometry args={[0.55, 0.14]} />
+        <mesh position={[0, 2.1, 0.077]}>
+          <planeGeometry args={[0.5, 0.13]} />
           <meshBasicMaterial color="#0a0a0a" />
         </mesh>
 
         {/* Side buttons */}
         {/* Volume up */}
-        <mesh position={[-1.22, 0.8, 0]}>
+        <mesh position={[-1.13, 0.8, 0]}>
           <boxGeometry args={[0.03, 0.22, 0.05]} />
           <meshStandardMaterial
             color="#222"
@@ -121,7 +121,7 @@ export default function Phone3D({ scrollProgress, children }: Props) {
           />
         </mesh>
         {/* Volume down */}
-        <mesh position={[-1.22, 0.35, 0]}>
+        <mesh position={[-1.13, 0.35, 0]}>
           <boxGeometry args={[0.03, 0.22, 0.05]} />
           <meshStandardMaterial
             color="#222"
@@ -130,7 +130,7 @@ export default function Phone3D({ scrollProgress, children }: Props) {
           />
         </mesh>
         {/* Power button */}
-        <mesh position={[1.22, 0.6, 0]}>
+        <mesh position={[1.13, 0.6, 0]}>
           <boxGeometry args={[0.03, 0.4, 0.05]} />
           <meshStandardMaterial
             color="#222"
@@ -142,7 +142,7 @@ export default function Phone3D({ scrollProgress, children }: Props) {
         {/* HTML screen content — rendered as DOM overlay tracking 3D transform */}
         <Html
           transform
-          distanceFactor={1.55}
+          distanceFactor={1.38}
           position={[0, 0, 0.078]}
           style={{
             width: 340,
