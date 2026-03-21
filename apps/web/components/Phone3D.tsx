@@ -142,7 +142,7 @@ export default function Phone3D({ scrollProgress, children }: Props) {
         {/* HTML screen content — rendered as DOM overlay tracking 3D transform */}
         <Html
           transform
-          distanceFactor={2.85}
+          distanceFactor={2.42}
           position={[0, 0, 0.078]}
           style={{
             width: 340,
