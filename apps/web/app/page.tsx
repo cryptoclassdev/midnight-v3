@@ -84,75 +84,32 @@ export default function Home() {
       {/* ─── Feature Pills ─── */}
       <section id="features" className="w-full py-16 md:py-24">
         <div className="max-w-[1200px] mx-auto px-6 md:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Feature 1 */}
-            <div className="bg-white rounded-2xl border border-black/[0.06] p-8 text-center shadow-sm hover:shadow-md transition-shadow duration-300">
-              <div className="w-12 h-12 mx-auto mb-5 rounded-xl bg-[#F0F4FF] flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-[#4C8BD0]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                  <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                  <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                  <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                </svg>
-              </div>
-              <h3 className="text-[15px] font-semibold text-[#111] mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="bg-[#f0f5f3] rounded-2xl border border-black/[0.04] p-7 shadow-sm hover:shadow-md transition-shadow duration-300 text-center">
+              <h3 className="text-lg font-brand text-[#111] mb-2">
                 60-word stories
               </h3>
-              <p className="text-sm text-[#888] leading-relaxed">
+              <p className="text-sm text-[#666] leading-relaxed">
                 Every article compressed to its essential facts. Only signal,
                 zero fluff.
               </p>
             </div>
 
-            {/* Feature 2 */}
-            <div className="bg-white rounded-2xl border border-black/[0.06] p-8 text-center shadow-sm hover:shadow-md transition-shadow duration-300">
-              <div className="w-12 h-12 mx-auto mb-5 rounded-xl bg-[#EEFBF7] flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-[#00D4AA]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-                  <polyline points="16 7 22 7 22 13" />
-                </svg>
-              </div>
-              <h3 className="text-[15px] font-semibold text-[#111] mb-2">
+            <div className="bg-[#eef4fb] rounded-2xl border border-black/[0.04] p-7 shadow-sm hover:shadow-md transition-shadow duration-300 text-center">
+              <h3 className="text-lg font-brand text-[#111] mb-2">
                 On-chain predictions
               </h3>
-              <p className="text-sm text-[#888] leading-relaxed">
+              <p className="text-sm text-[#666] leading-relaxed">
                 Read the headline, form a view, swipe YES or NO. All markets
                 settle on Solana.
               </p>
             </div>
 
-            {/* Feature 3 */}
-            <div className="bg-white rounded-2xl border border-black/[0.06] p-8 text-center shadow-sm hover:shadow-md transition-shadow duration-300">
-              <div className="w-12 h-12 mx-auto mb-5 rounded-xl bg-[#FFF5EE] flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-[#F7931A]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M14.5 9.5c0-1.1-1.1-2-2.5-2s-2.5.9-2.5 2 1.1 2 2.5 2 2.5.9 2.5 2-1.1 2-2.5 2-2.5-.9-2.5-2" />
-                  <line x1="12" y1="6" x2="12" y2="7.5" />
-                  <line x1="12" y1="16.5" x2="12" y2="18" />
-                </svg>
-              </div>
-              <h3 className="text-[15px] font-semibold text-[#111] mb-2">
+            <div className="bg-[#f5f0eb] rounded-2xl border border-black/[0.04] p-7 shadow-sm hover:shadow-md transition-shadow duration-300 text-center">
+              <h3 className="text-lg font-brand text-[#111] mb-2">
                 Real-time markets
               </h3>
-              <p className="text-sm text-[#888] leading-relaxed">
+              <p className="text-sm text-[#666] leading-relaxed">
                 Track crypto prices with live data. Connect any Solana wallet —
                 Phantom, Backpack, and more.
               </p>
@@ -287,7 +244,7 @@ export default function Home() {
                     >
                       {coin}
                     </span>
-                  )
+                  ),
                 )}
               </div>
             </div>
@@ -394,22 +351,22 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 md:gap-8 max-w-3xl mx-auto">
             {[
               {
-                name: "SebMonty",
+                name: "Seb Monty",
                 role: "Co-Founder",
                 image: "/team-seb.png",
-                twitter: "#",
+                twitter: "https://x.com/SebMontgomery",
               },
               {
                 name: "Chris",
                 role: "Co-Founder",
                 image: "/team-chris.png",
-                twitter: "#",
+                twitter: "https://x.com/AverageChris25",
               },
               {
                 name: "Sublime",
                 role: "Co-Founder",
                 image: "/team-sublime.png",
-                twitter: "#",
+                twitter: "https://x.com/vbvtwt",
               },
             ].map((member) => (
               <div key={member.name} className="group">

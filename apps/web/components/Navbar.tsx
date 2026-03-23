@@ -1,31 +1,9 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-const SCROLL_THRESHOLD = 50;
-
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    function onScroll() {
-      setScrolled(window.scrollY > SCROLL_THRESHOLD);
-    }
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
-    <nav
-      className={`w-full z-50 fixed top-0 transition-all duration-300 ${
-        scrolled
-          ? "bg-white/80 backdrop-blur-xl border-b border-black/[0.06] shadow-sm"
-          : "bg-transparent border-b border-transparent"
-      }`}
-    >
+    <nav className="w-full z-50 fixed top-0 bg-transparent">
       <div className="max-w-[1200px] mx-auto px-6 md:px-8 h-16 flex justify-between items-center">
         <Link href="/" className="flex items-center gap-2.5">
           <Image
