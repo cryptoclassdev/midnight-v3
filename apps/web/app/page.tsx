@@ -313,28 +313,23 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              { value: "60", label: "Words per story", suffix: "" },
-              { value: "< 2", label: "Minutes to catch up", suffix: "min" },
-              { value: "20+", label: "News sources", suffix: "" },
-              { value: "24/7", label: "Market coverage", suffix: "" },
-            ].map((stat, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-2xl border border-black/[0.06] p-6 text-center shadow-sm"
-              >
-                <div className="font-brand text-3xl md:text-4xl text-[#111] mb-1">
-                  {stat.value}
-                  {stat.suffix && (
-                    <span className="text-lg text-[#999]"> {stat.suffix}</span>
-                  )}
-                </div>
-                <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#999]">
-                  {stat.label}
-                </span>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            <div className="bg-[#f0f5f3] rounded-2xl border border-black/[0.04] p-7 text-center shadow-sm">
+              <div className="font-brand text-3xl md:text-4xl text-[#111] mb-1">60</div>
+              <span className="text-sm text-[#666]">Words per story</span>
+            </div>
+            <div className="bg-[#eef4fb] rounded-2xl border border-black/[0.04] p-7 text-center shadow-sm">
+              <div className="font-brand text-3xl md:text-4xl text-[#111] mb-1">&lt; 2 <span className="text-lg text-[#999]">min</span></div>
+              <span className="text-sm text-[#666]">Minutes to catch up</span>
+            </div>
+            <div className="bg-[#f5f0eb] rounded-2xl border border-black/[0.04] p-7 text-center shadow-sm">
+              <div className="font-brand text-3xl md:text-4xl text-[#111] mb-1">20+</div>
+              <span className="text-sm text-[#666]">News sources</span>
+            </div>
+            <div className="bg-[#f3f0f5] rounded-2xl border border-black/[0.04] p-7 text-center shadow-sm">
+              <div className="font-brand text-3xl md:text-4xl text-[#111] mb-1">24/7</div>
+              <span className="text-sm text-[#666]">Market coverage</span>
+            </div>
           </div>
         </div>
       </section>

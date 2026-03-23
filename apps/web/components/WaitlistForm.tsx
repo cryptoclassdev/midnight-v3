@@ -47,9 +47,6 @@ export default function WaitlistForm() {
         </button>
       </form>
 
-      <p className="mt-4 text-center font-mono text-[9px] text-[#bbb] uppercase tracking-[0.15em]">
-        No spam · No wallet required to read · Powered by Solana
-      </p>
     </div>
   );
 }

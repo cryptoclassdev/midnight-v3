@@ -6,7 +6,7 @@ const FAQS = [
   {
     question: "What is Midnight?",
     answer:
-      "Midnight is a crypto and AI news app that compresses every story to 60 words. Swipe through the feed, form a view on what's happening, and place on-chain predictions — all in under a minute.",
+      "Midnight gives you crypto and AI news in 60 words or less. Swipe through stories, get the signal fast, and bet on what happens next with on-chain prediction markets.",
   },
   {
     question: "How do prediction markets work?",
@@ -16,7 +16,7 @@ const FAQS = [
   {
     question: "Do I need a crypto wallet?",
     answer:
-      "No wallet is required to read the news feed. To place predictions, you can connect any Solana wallet — Phantom, Backpack, Solflare, and more. We never hold your funds.",
+      "No wallet is required to read the news feed. To place predictions, connect any Solana wallet like Phantom, Backpack, or Solflare. We never hold your funds.",
   },
   {
     question: "What platforms will Midnight be available on?",
@@ -31,7 +31,7 @@ const FAQS = [
   {
     question: "Where does the news come from?",
     answer:
-      "We aggregate from trusted crypto and AI news sources, then use AI to compress each story to its essential facts — 60 words, no fluff, just signal.",
+      "We pull from trusted crypto and AI news sources, then compress each story to 60 words. No fluff, just signal.",
   },
 ];
 
