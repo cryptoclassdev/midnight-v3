@@ -159,9 +159,6 @@ export default function Home() {
                 <span className="px-3 py-1.5 rounded-full bg-[#F0F4FF] text-[#4C8BD0] font-mono text-[10px] uppercase tracking-wider">
                   AI
                 </span>
-                <span className="px-3 py-1.5 rounded-full bg-[#F0F4FF] text-[#4C8BD0] font-mono text-[10px] uppercase tracking-wider">
-                  Swipe UX
-                </span>
               </div>
             </div>
           </div>
@@ -235,18 +232,6 @@ export default function Home() {
                 Track crypto prices with live data. Connect any Solana wallet —
                 Phantom, Backpack, Solflare, and more.
               </p>
-              <div className="mt-6 flex flex-wrap gap-2">
-                {["Bitcoin", "Ethereum", "Solana", "Sui", "Avalanche"].map(
-                  (coin) => (
-                    <span
-                      key={coin}
-                      className="px-3 py-1.5 rounded-full bg-white border border-black/[0.06] text-[#666] font-mono text-[10px] uppercase tracking-wider"
-                    >
-                      {coin}
-                    </span>
-                  ),
-                )}
-              </div>
             </div>
           </div>
         </div>
