@@ -270,7 +270,7 @@ export default function Home() {
       </section>
 
       {/* ─── Highlight / CTA Section (colored background, like coverage in design) ─── */}
-      <section className="w-full py-20 md:py-28 bg-gradient-to-br from-[#FDF2EF] via-[#FEF8F5] to-[#F0F7F4] relative overflow-hidden">
+      <section className="w-full py-20 md:py-28 bg-[#fafafa] relative overflow-hidden">
         {/* Subtle decorative elements */}
         <div className="absolute top-10 right-[15%] w-[200px] h-[200px] rounded-full bg-[#FDDDD5]/30 blur-[60px] pointer-events-none" />
         <div className="absolute bottom-10 left-[10%] w-[180px] h-[180px] rounded-full bg-[#D5F0E8]/30 blur-[60px] pointer-events-none" />
@@ -315,13 +315,31 @@ export default function Home() {
               </div>
             </div>
             <div className="flex justify-center">
-              <Image
-                src="/mockup-wallet.png"
-                alt="Midnight connect wallet"
-                width={260}
-                height={540}
-                className="w-[240px] md:w-[280px] h-auto drop-shadow-2xl phone-float-delayed"
-              />
+              <div className="relative w-[240px] md:w-[280px]" style={{ aspectRatio: "1080 / 1920" }}>
+                {/* Video positioned at the screen area behind the frame */}
+                <video
+                  src="/seeker-loop.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="absolute object-cover"
+                  style={{
+                    top: "5%",
+                    left: "14.26%",
+                    width: "71.67%",
+                    height: "89.79%",
+                  }}
+                />
+                {/* Phone frame: #fafafa outside, transparent screen, opaque bezel */}
+                <Image
+                  src="/seeker-frame-overlay.png"
+                  alt=""
+                  width={1080}
+                  height={1920}
+                  className="relative z-10 w-full h-full pointer-events-none"
+                />
+              </div>
             </div>
           </div>
         </div>
