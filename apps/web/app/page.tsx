@@ -481,8 +481,8 @@ export default function Home() {
               <Image
                 src="/logo.png"
                 alt="Midnight"
-                width={24}
-                height={24}
+                width={32}
+                height={32}
                 className="rounded-lg"
               />
               <span className="text-sm font-brand font-medium tracking-tight text-white/80">
