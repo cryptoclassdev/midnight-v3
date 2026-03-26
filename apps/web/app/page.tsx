@@ -62,7 +62,7 @@ export default function Home() {
           </div>
 
           {/* Phone Mockups — overlapping, tilted layout */}
-          <div className="relative flex justify-center items-center h-[480px] md:h-[580px] fade-up fade-up-d4">
+          <div className="relative flex justify-center items-center h-[480px] md:h-[580px] 2xl:h-[720px] fade-up fade-up-d4">
             {/* Right phone (behind, tilted right) */}
             <div
               className="absolute z-0"
@@ -73,7 +73,7 @@ export default function Home() {
                 alt="Midnight market screen"
                 width={260}
                 height={540}
-                className="w-[220px] md:w-[260px] h-auto drop-shadow-2xl"
+                className="w-[220px] md:w-[260px] lg:w-[300px] 2xl:w-[340px] h-auto drop-shadow-2xl"
                 priority
               />
             </div>
@@ -87,7 +87,7 @@ export default function Home() {
                 alt="Midnight news feed screen"
                 width={260}
                 height={540}
-                className="w-[220px] md:w-[260px] h-auto drop-shadow-2xl"
+                className="w-[220px] md:w-[260px] lg:w-[300px] 2xl:w-[340px] h-auto drop-shadow-2xl"
                 priority
               />
             </div>
@@ -154,7 +154,7 @@ export default function Home() {
                 alt="Midnight 60-word news feed"
                 width={260}
                 height={540}
-                className="w-[240px] md:w-[280px] h-auto drop-shadow-2xl phone-float"
+                className="w-[240px] md:w-[280px] lg:w-[320px] 2xl:w-[360px] h-auto drop-shadow-2xl phone-float"
               />
             </div>
             <div className="order-1 lg:order-2">
@@ -233,7 +233,7 @@ export default function Home() {
                 alt="Midnight swipe to bet"
                 width={260}
                 height={540}
-                className="w-[240px] md:w-[280px] h-auto drop-shadow-2xl phone-float-delayed"
+                className="w-[240px] md:w-[280px] lg:w-[320px] 2xl:w-[360px] h-auto drop-shadow-2xl phone-float-delayed"
               />
             </div>
           </div>
@@ -246,7 +246,7 @@ export default function Home() {
                 alt="Midnight market screen"
                 width={260}
                 height={540}
-                className="w-[240px] md:w-[280px] h-auto drop-shadow-2xl phone-float"
+                className="w-[240px] md:w-[280px] lg:w-[320px] 2xl:w-[360px] h-auto drop-shadow-2xl phone-float"
               />
             </div>
             <div className="order-1 lg:order-2">
@@ -315,7 +315,7 @@ export default function Home() {
               </div>
             </div>
             <div className="flex justify-center">
-              <div className="relative w-[240px] md:w-[280px]" style={{ aspectRatio: "1080 / 1920" }}>
+              <div className="relative w-[240px] md:w-[280px] lg:w-[320px] 2xl:w-[360px]" style={{ aspectRatio: "1080 / 1920" }}>
                 {/* Video positioned at the screen area behind the frame */}
                 <video
                   src="/seeker-loop.mp4"
