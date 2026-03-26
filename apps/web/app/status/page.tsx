@@ -29,8 +29,6 @@ const STATUS_COLORS = {
 
 const SERVICES_CONFIG = [
   { name: "API Server", endpoint: "/api/v1/health" },
-  { name: "Feed Service", endpoint: "/api/v1/feed?limit=1" },
-  { name: "Market Service", endpoint: "/api/v1/market" },
 ];
 
 async function checkService(endpoint: string): Promise<ServiceCheck> {
