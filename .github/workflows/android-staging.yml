@@ -2,7 +2,7 @@ name: Android APK (Staging)
 
 on:
   push:
-    branches: [staging]
+    branches: [stage]
     paths:
       - "apps/mobile/**"
       - "packages/shared/**"
