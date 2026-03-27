@@ -1,5 +1,5 @@
 import { useRef, useCallback } from "react";
-import { Tabs, usePathname, useRouter, useNavigationContainerRef } from "expo-router";
+import { Tabs, usePathname, useRouter } from "expo-router";
 import { View, StyleSheet } from "react-native";
 import { Gesture, GestureDetector, Directions } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

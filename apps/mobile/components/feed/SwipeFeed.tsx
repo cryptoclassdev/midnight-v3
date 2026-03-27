@@ -42,6 +42,7 @@ export function SwipeFeed() {
   const pullOffset = useSharedValue(0);
   const refreshOpacity = useSharedValue(0);
   const refreshScale = useSharedValue(0.8);
+  const hapticFired = useSharedValue(false);
 
   const query = useFeed();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError, refetch, isRefetching } =
@@ -113,29 +114,37 @@ export function SwipeFeed() {
   };
 
   // Pull-to-refresh gesture (only on page 0)
+  // activeOffsetY(15): only activate after 15px downward pull
+  // failOffsetY(-5): fail instantly on upward swipe → PagerView handles it
+  // failOffsetX: fail on horizontal movement
   const panGesture = Gesture.Pan()
     .enabled(currentIndex === 0)
+    .activeOffsetY(15)
+    .failOffsetY(-5)
+    .failOffsetX([-10, 10])
+    .onStart(() => {
+      hapticFired.value = false;
+    })
     .onUpdate((e) => {
       if (e.translationY > 0) {
         pullOffset.value = Math.min(e.translationY, 120);
         refreshOpacity.value = Math.min(pullOffset.value / 80, 1);
         refreshScale.value = 0.8 + refreshOpacity.value * 0.2;
 
-        // Haptic feedback at threshold (80px)
-        if (e.translationY > 75 && e.translationY < 85) {
-          haptics.selection();
+        // Haptic once when crossing the 80px threshold
+        if (e.translationY > 80 && !hapticFired.value) {
+          hapticFired.value = true;
+          runOnJS(haptics.selection)();
         }
       }
     })
     .onEnd(() => {
       if (pullOffset.value > 80) {
-        // Trigger refresh
         runOnJS(handleRefresh)();
         pullOffset.value = withSpring(0, { damping: 12, stiffness: 100 });
         refreshOpacity.value = withTiming(0, { duration: 300 });
         refreshScale.value = withSpring(0.8, { damping: 12, stiffness: 100 });
       } else {
-        // Spring back
         pullOffset.value = withSpring(0, { damping: 15, stiffness: 200 });
         refreshOpacity.value = withTiming(0, { duration: 200 });
         refreshScale.value = withSpring(0.8, { damping: 15, stiffness: 200 });
