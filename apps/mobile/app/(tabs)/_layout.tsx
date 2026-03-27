@@ -34,6 +34,10 @@ export default function TabLayout() {
     [router],
   );
 
+  const onTabPress = useCallback(() => {
+    haptics.selection();
+  }, []);
+
   const flingLeft = Gesture.Fling()
     .direction(Directions.LEFT)
     .onEnd(() => navigateTab("right"))
@@ -83,6 +87,11 @@ export default function TabLayout() {
             <Ionicons name="grid-outline" size={size} color={color} />
           ),
         }}
+        listeners={() => ({
+          tabPress: (e) => {
+            onTabPress();
+          },
+        })}
       />
       <Tabs.Screen
         name="market"
@@ -92,6 +101,11 @@ export default function TabLayout() {
             <Ionicons name="trending-up-outline" size={size} color={color} />
           ),
         }}
+        listeners={() => ({
+          tabPress: (e) => {
+            onTabPress();
+          },
+        })}
       />
       <Tabs.Screen
         name="settings"
@@ -101,6 +115,11 @@ export default function TabLayout() {
             <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
+        listeners={() => ({
+          tabPress: (e) => {
+            onTabPress();
+          },
+        })}
       />
     </Tabs>
     </View>
