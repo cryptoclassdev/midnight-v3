@@ -22,8 +22,14 @@ import { colors } from "@/constants/theme";
 import { APP_IDENTITY, SOLANA_MWA_CHAIN, SOLANA_RPC_URL } from "@/lib/solana";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { ToastProvider } from "@/components/ui/Toast";
+import { useNotifications } from "@/hooks/useNotifications";
 
 SplashScreen.preventAutoHideAsync();
+
+function NotificationBootstrap() {
+  useNotifications();
+  return null;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -86,6 +92,7 @@ export default function RootLayout() {
           identity={APP_IDENTITY}
         >
           <StatusBar style={theme === "dark" ? "light" : "dark"} />
+          <NotificationBootstrap />
           <Stack
             screenOptions={{
               headerShown: false,

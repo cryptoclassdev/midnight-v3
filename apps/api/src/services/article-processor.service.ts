@@ -5,6 +5,7 @@ import { fetchAllTwitterFeeds } from "./twitter-fetcher.service";
 import { rewriteArticle } from "./gemini.service";
 import { generateBlurhash } from "./image.service";
 import { matchMarketForArticle } from "./jupiter-prediction.service";
+import { broadcastNotification } from "./notification.service";
 import { ARTICLE_SUMMARY_WORD_LIMIT } from "@mintfeed/shared";
 
 function truncateToWordLimit(text: string, limit: number = ARTICLE_SUMMARY_WORD_LIMIT): string {
@@ -75,7 +76,7 @@ async function processItem(item: ParsedFeedItem, options: ProcessItemOptions = {
 
   if (titleDuplicate) return;
 
-  const { title, summary } = await rewriteArticle(item.title, item.content);
+  const { title, summary, breaking } = await rewriteArticle(item.title, item.content);
   const imageBlurhash = item.imageUrl
     ? await generateBlurhash(item.imageUrl)
     : null;
@@ -93,6 +94,7 @@ async function processItem(item: ParsedFeedItem, options: ProcessItemOptions = {
       summary: truncateToWordLimit(summary, 60),
       imageUrl: item.imageUrl,
       imageBlurhash,
+      isBreaking: breaking,
       publishedAt: new Date(item.pubDate),
       sourceType,
       tweetId: tweetId ?? null,
@@ -103,6 +105,20 @@ async function processItem(item: ParsedFeedItem, options: ProcessItemOptions = {
   matchMarketForArticle(article.id, item.title, title).catch((err) => {
     console.error(`[ArticleProcessor] Market matching failed for "${item.title.slice(0, 40)}":`, err);
   });
+
+  // Send breaking news notification
+  if (breaking) {
+    broadcastNotification({
+      type: "BREAKING_NEWS",
+      title,
+      body: truncateToWordLimit(summary, 20),
+      imageUrl: item.imageUrl ?? undefined,
+      data: { screen: "article", id: article.id },
+      referenceId: article.id,
+    }).catch((err) => {
+      console.error(`[ArticleProcessor] Breaking notification failed:`, err);
+    });
+  }
 }
 
 export { normalizeUrl, hashUrl, normalizeTitle, hashTitle };

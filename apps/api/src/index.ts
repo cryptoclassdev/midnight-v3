@@ -39,6 +39,7 @@ import { healthRoutes } from "./routes/health";
 import { predictionRoutes } from "./routes/predictions";
 import { skrRoutes } from "./routes/skr";
 import { seekerRoutes } from "./routes/seeker";
+import { notificationRoutes } from "./routes/notifications";
 import { startCronJobs } from "./cron";
 
 const app = new Hono();
@@ -52,6 +53,7 @@ app.route("/api/v1", healthRoutes);
 app.route("/api/v1", predictionRoutes);
 app.route("/api/v1", skrRoutes);
 app.route("/api/v1", seekerRoutes);
+app.route("/api/v1", notificationRoutes);
 
 const PORT = Number(process.env.PORT) || 3000;
 

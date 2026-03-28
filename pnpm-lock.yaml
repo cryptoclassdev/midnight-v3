@@ -48,6 +48,9 @@ importers:
       '@solana/web3.js':
         specifier: ^1.98.4
         version: 1.98.4(typescript@5.9.3)
+      expo-server-sdk:
+        specifier: ^6.1.0
+        version: 6.1.0
       hono:
         specifier: ^4.6.0
         version: 4.12.8
@@ -151,6 +154,9 @@ importers:
       expo-linking:
         specifier: 55.0.0-canary-20260223-05214f1
         version: 55.0.0-canary-20260223-05214f1(expo@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+      expo-notifications:
+        specifier: 55.0.15-canary-20260328-2049187
+        version: 55.0.15-canary-20260328-2049187(expo@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
       expo-router:
         specifier: 55.0.0-canary-20260223-05214f1
         version: 55.0.0-canary-20260223-05214f1(@expo/log-box@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(@testing-library/react-native@12.9.0)(@types/react@19.2.14)(expo-constants@55.0.0-canary-20260223-05214f1)(expo-font@55.0.0-canary-20260223-05214f1)(expo-linking@55.0.0-canary-20260223-05214f1)(expo@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-gesture-handler@2.30.0)(react-native-reanimated@4.2.3)(react-native-safe-area-context@5.6.2)(react-native-screens@4.23.0)(react-native@0.83.2)(react@19.2.0)
@@ -1768,6 +1774,7 @@ packages:
       - supports-color
       - typescript
       - utf-8-validate
+    dev: false
 
   /@expo/code-signing-certificates@0.0.6:
     resolution: {integrity: sha512-iNe0puxwBNEcuua9gmTGzq+SuMDa0iATai1FlFTMHJ/vUmKvN/V//drXoLJkVb5i5H3iE/n/qIJxyoBnXouD0w==}
@@ -1793,8 +1800,32 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
+  /@expo/config-plugins@55.0.8-canary-20260328-2049187:
+    resolution: {integrity: sha512-FJ81ylIzcIXEIt2VHTr23YixsqVWOErwwYhpf0+mGv4Rrnqkae97fTROUjeQEcKlB2uIkfe/gqwA5grwSF0c5A==}
+    dependencies:
+      '@expo/config-types': 55.0.6-canary-20260328-2049187
+      '@expo/json-file': 10.0.13-canary-20260328-2049187
+      '@expo/plist': 0.5.3-canary-20260328-2049187
+      '@expo/sdk-runtime-versions': 1.0.0
+      chalk: 4.1.2
+      debug: 4.4.3
+      getenv: 2.0.0
+      glob: 13.0.6
+      resolve-from: 5.0.0
+      semver: 7.7.4
+      slugify: 1.6.8
+      xcode: 3.0.1
+      xml2js: 0.6.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
   /@expo/config-types@55.0.0-canary-20260223-05214f1:
     resolution: {integrity: sha512-cKyk2HxoUK0v3kt4bDJySC5w6mopEp+FPDuP7cSCdM2/HAE9zvJcKLNqcz7A1FEOpnVXtknna8wKVMr8kekVMw==}
+
+  /@expo/config-types@55.0.6-canary-20260328-2049187:
+    resolution: {integrity: sha512-Pc+bPfbyHGrvcg70XnkHY1ffemjDcBzFn+y6/nsS5aZCrhehtSRX6jrxujyJSa0zRnPxXTBO646NVa/kGZ5UrQ==}
+    dev: false
 
   /@expo/config@55.0.0-canary-20260223-05214f1(typescript@5.9.3):
     resolution: {integrity: sha512-XrISlhTPnFzpi7hbM9WmWTtHxlAGhtL2hl78J9pFk0jaYly07U3RO1xodnPjZVuQvxm0AkEDGfBAPVVT0/G6tw==}
@@ -1813,6 +1844,25 @@ packages:
     transitivePeerDependencies:
       - supports-color
       - typescript
+
+  /@expo/config@55.0.12-canary-20260328-2049187(typescript@5.9.3):
+    resolution: {integrity: sha512-PV5QVwrxNBQ8vb3/wecKMLIuiU+Yx8pNRdDHU+5EAaykKIfvkLh6aHEJQCDwG3tMOHGgtTYs5jjtEoJoWWMQ+g==}
+    dependencies:
+      '@expo/config-plugins': 55.0.8-canary-20260328-2049187
+      '@expo/config-types': 55.0.6-canary-20260328-2049187
+      '@expo/json-file': 10.0.13-canary-20260328-2049187
+      '@expo/require-utils': 55.0.4-canary-20260328-2049187(typescript@5.9.3)
+      deepmerge: 4.3.1
+      getenv: 2.0.0
+      glob: 13.0.6
+      resolve-from: 5.0.0
+      resolve-workspace-root: 2.0.1
+      semver: 7.7.4
+      slugify: 1.6.8
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
+    dev: false
 
   /@expo/devcert@1.2.1:
     resolution: {integrity: sha512-qC4eaxmKMTmJC2ahwyui6ud8f3W60Ss7pMkpBq40Hu3zyiAaugPXnZ24145U7K36qO9UHdZUVxsCvIpz2RYYCA==}
@@ -1835,7 +1885,7 @@ packages:
     dependencies:
       chalk: 4.1.2
       react: 19.2.0
-      react-native: 0.83.2(@babel/core@7.29.0)(react@19.2.0)
+      react-native: 0.83.2(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0)
 
   /@expo/dom-webview@55.0.0-canary-20260223-05214f1(expo@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0):
     resolution: {integrity: sha512-MxL+qPQ3ptKi4OuJMXby40Yq6lung7BdzzqWuFB9VCypQiP8OlRG4ysEpD1n+F/VSFNAErZI9d3Hl8s+fUcxpA==}
@@ -1844,9 +1894,9 @@ packages:
       react: '*'
       react-native: '*'
     dependencies:
-      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
       react: 19.2.0
-      react-native: 0.83.2(@babel/core@7.29.0)(react@19.2.0)
+      react-native: 0.83.2(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0)
 
   /@expo/env@2.1.2-canary-20260223-05214f1:
     resolution: {integrity: sha512-sLQ9xpFrqoQLMvQN1z80neko7jeAg4K0VvQsxRJ5Pht9sWcuy30rMd+j0xxZco09PsOo9MTujR+wf5+37qCtMA==}
@@ -1857,6 +1907,17 @@ packages:
       getenv: 2.0.0
     transitivePeerDependencies:
       - supports-color
+
+  /@expo/env@2.1.2-canary-20260328-2049187:
+    resolution: {integrity: sha512-mmJOdhPNnB+hIh0v/1uLVwB9rc1N+mpbFZNLcGXFvful/RDbJgbCXvSg5BbQ/4LWyquairZ2AArNDHqe0Y4RPA==}
+    engines: {node: '>=20.12.0'}
+    dependencies:
+      chalk: 4.1.2
+      debug: 4.4.3
+      getenv: 2.0.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
 
   /@expo/fingerprint@0.16.5-canary-20260223-05214f1:
     resolution: {integrity: sha512-DdHPUCgfPEda8FNcrWjrLIk/+hJHkp3hEPtz2dDu+fd8H0RxGoOmraU/QHEfN1u3nL1m2DdB4VI3XMCsvGnDEA==}
@@ -1887,11 +1948,30 @@ packages:
       resolve-from: 5.0.0
       semver: 7.7.4
 
+  /@expo/image-utils@0.8.13-canary-20260328-2049187:
+    resolution: {integrity: sha512-p3AyR5fgcOOBRglKh7akw94IeY9DHrY2oPfhTMsNxlTsk1ShDlnpkOozlubwC9XXdPewG0RTuIhLmeyQ9kw77A==}
+    dependencies:
+      '@expo/spawn-async': 1.7.2
+      chalk: 4.1.2
+      getenv: 2.0.0
+      jimp-compact: 0.16.1
+      parse-png: 2.1.0
+      resolve-from: 5.0.0
+      semver: 7.7.4
+    dev: false
+
   /@expo/json-file@10.0.13-canary-20260223-05214f1:
     resolution: {integrity: sha512-ZgaYRYUx+WXG6JKD60h1W5lc6kloAzfpzQMTnYLSh7PBZQQiZ/ORu1lmaMzKjQ+iZtA1YNh49un/5Jo2ThPiHg==}
     dependencies:
       '@babel/code-frame': 7.29.0
       json5: 2.2.3
+
+  /@expo/json-file@10.0.13-canary-20260328-2049187:
+    resolution: {integrity: sha512-a1lKlVUu5QnKzC0RVCH9Fwwbx4W1g9g9Uw63gah3V+D+PGiXkOpIH3rMTMEnj3wesBcMj5JouBAoxFWnh5PLSw==}
+    dependencies:
+      '@babel/code-frame': 7.29.0
+      json5: 2.2.3
+    dev: false
 
   /@expo/local-build-cache-provider@55.0.0-canary-20260223-05214f1(typescript@5.9.3):
     resolution: {integrity: sha512-oTFp6VSFNKsz+GjB2ul19MnMVL1HGb+v2PcGzaJAfWE+G9sLRfNM4ATWO/BkJEwKJzrLY/FAPcMu4yCf2SMLwQ==}
@@ -1912,9 +1992,9 @@ packages:
     dependencies:
       '@expo/dom-webview': 55.0.0-canary-20260223-05214f1(expo@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)
       anser: 1.4.10
-      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
       react: 19.2.0
-      react-native: 0.83.2(@babel/core@7.29.0)(react@19.2.0)
+      react-native: 0.83.2(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0)
       stacktrace-parser: 0.1.11
 
   /@expo/metro-config@55.0.0-canary-20260223-05214f1(expo@55.0.0-canary-20260223-05214f1)(typescript@5.9.3):
@@ -1936,7 +2016,7 @@ packages:
       browserslist: 4.28.1
       chalk: 4.1.2
       debug: 4.4.3
-      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
       getenv: 2.0.0
       glob: 13.0.6
       hermes-parser: 0.29.1
@@ -2019,6 +2099,14 @@ packages:
       base64-js: 1.5.1
       xmlbuilder: 15.1.1
 
+  /@expo/plist@0.5.3-canary-20260328-2049187:
+    resolution: {integrity: sha512-2lyc4DpjRwz9yNcJn82pfC3AKarzJUt7fjPl/4qrn8KROPmq9xb4A2DBk7tgYCPKPUlBocEViVQ+zB4l9t2YFQ==}
+    dependencies:
+      '@xmldom/xmldom': 0.8.11
+      base64-js: 1.5.1
+      xmlbuilder: 15.1.1
+    dev: false
+
   /@expo/prebuild-config@55.0.0-canary-20260223-05214f1(expo@55.0.0-canary-20260223-05214f1)(typescript@5.9.3):
     resolution: {integrity: sha512-To8iqrfE9hv3fSCgdAk05iL0KnWdrdu2DoDsH2KZmYg8/gOHIaw5tTK7PWWC8sAyLOgU1pWjO09DPv+vkejXKQ==}
     peerDependencies:
@@ -2031,7 +2119,7 @@ packages:
       '@expo/json-file': 10.0.13-canary-20260223-05214f1
       '@react-native/normalize-colors': 0.83.2
       debug: 4.4.3
-      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
       resolve-from: 5.0.0
       semver: 7.7.4
       xml2js: 0.6.0
@@ -2049,6 +2137,22 @@ packages:
     dependencies:
       '@babel/code-frame': 7.29.0
       typescript: 5.9.3
+
+  /@expo/require-utils@55.0.4-canary-20260328-2049187(typescript@5.9.3):
+    resolution: {integrity: sha512-xjShWGciKtN5mOiiDABPrwaXlmfmhn7H5OSnoWN1D5u2SzfJomazGdez4KkBf65QjVCL3HY/oC6ErGqjzVKH+Q==}
+    peerDependencies:
+      typescript: ^5.0.0 || ^5.0.0-0
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+    dependencies:
+      '@babel/code-frame': 7.29.0
+      '@babel/core': 7.29.0
+      '@babel/plugin-transform-modules-commonjs': 7.28.6(@babel/core@7.29.0)
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
 
   /@expo/router-server@55.0.0-canary-20260223-05214f1(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-constants@55.0.0-canary-20260223-05214f1)(expo-font@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(expo-server@55.0.0-canary-20260223-05214f1)(expo@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react@19.2.0):
     resolution: {integrity: sha512-slz6jk0XTv1Ne+Sz4gc6K7th1/FrbjGeBFSQcjBp2b1xtEfO9crrxXBiJagcbEh4Qv6DkH6d+tPCTAAHzOYEXg==}
@@ -2114,6 +2218,7 @@ packages:
       react: 19.2.0
     transitivePeerDependencies:
       - supports-color
+    dev: false
 
   /@expo/schema-utils@55.0.0-canary-20260223-05214f1:
     resolution: {integrity: sha512-fxJ3jmKuQQbHGe5zp1J2dm6EPRY+IsthSuLOImmHFwc7+bu7t99BTO62Md8Aw3cbg4Y0zEB9W+xlRRizMFRBYQ==}
@@ -3649,6 +3754,7 @@ packages:
       nullthrows: 1.1.1
       react: 19.2.0
       react-native: 0.83.2(@babel/core@7.29.0)(react@19.2.0)
+    dev: false
 
   /@react-navigation/bottom-tabs@7.10.1(@react-navigation/native@7.1.28)(react-native-safe-area-context@5.6.2)(react-native-screens@4.23.0)(react-native@0.83.2)(react@19.2.0):
     resolution: {integrity: sha512-MirOzKEe/rRwPSE9HMrS4niIo0LyUhewlvd01TpzQ1ipuXjH2wJbzAM9gS/r62zriB6HMHz2OY6oIRduwQJtTw==}
@@ -6090,7 +6196,7 @@ packages:
       babel-plugin-syntax-hermes-parser: 0.29.1
       babel-plugin-transform-flow-enums: 0.0.2(@babel/core@7.29.0)
       debug: 4.4.3
-      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
       react-refresh: 0.14.2
       resolve-from: 5.0.0
     transitivePeerDependencies:
@@ -6106,6 +6212,10 @@ packages:
       '@babel/core': 7.29.0
       babel-plugin-jest-hoist: 29.6.3
       babel-preset-current-node-syntax: 1.2.0(@babel/core@7.29.0)
+
+  /badgin@1.2.3:
+    resolution: {integrity: sha512-NQGA7LcfCpSzIbGRbkgjgdWkjy7HI+Th5VLxTJfW5EeaAf3fnS+xWQaQOCYiny+q6QSvxqoSO04vCx+4u++EJw==}
+    dev: false
 
   /balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
@@ -6967,6 +7077,10 @@ packages:
     engines: {node: '>=0.12'}
     dev: true
 
+  /err-code@2.0.3:
+    resolution: {integrity: sha512-2bmlRpNKBxT/CRmPOlyISQpNj+qSeYvcym/uT0Jx2bMOlKLtSy1ZmLuVxSEKKyor/N5yhvp/ZiG1oE3DEYMSFA==}
+    dev: false
+
   /error-ex@1.3.4:
     resolution: {integrity: sha512-sqQamAnR14VgCr1A618A3sGrygcpK+HEbenA/HiEAkkUwcZIIB/tgWqHFxWgOyDh4nB4JCRimh79dR5Ywc9MDQ==}
     dependencies:
@@ -7180,6 +7294,14 @@ packages:
       expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
     dev: false
 
+  /expo-application@55.0.11-canary-20260328-2049187(expo@55.0.0-canary-20260223-05214f1):
+    resolution: {integrity: sha512-XrWghJefOb3fTdxK0B3RKuz9l31nZn2SIPqn2qhYx4kOPXa/CytaUvH5wG5gHJ2ZGtonk4JPmw+a69OiDj7MfQ==}
+    peerDependencies:
+      expo: 55.0.10-canary-20260328-2049187
+    dependencies:
+      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+    dev: false
+
   /expo-asset@55.0.0-canary-20260223-05214f1(expo@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3):
     resolution: {integrity: sha512-K+PeEsCcJxQfV7HR5qPnJEqHgpkLldOg1W3euLt85XxN72sAQtyuppoodIeBqomK6UR5rrO+Zg0q2OtiBpTpIw==}
     peerDependencies:
@@ -7188,10 +7310,10 @@ packages:
       react-native: '*'
     dependencies:
       '@expo/image-utils': 0.8.13-canary-20260223-05214f1
-      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
       expo-constants: 55.0.0-canary-20260223-05214f1(expo@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(typescript@5.9.3)
       react: 19.2.0
-      react-native: 0.83.2(@babel/core@7.29.0)(react@19.2.0)
+      react-native: 0.83.2(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0)
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -7216,11 +7338,26 @@ packages:
     dependencies:
       '@expo/config': 55.0.0-canary-20260223-05214f1(typescript@5.9.3)
       '@expo/env': 2.1.2-canary-20260223-05214f1
-      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
-      react-native: 0.83.2(@babel/core@7.29.0)(react@19.2.0)
+      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+      react-native: 0.83.2(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0)
     transitivePeerDependencies:
       - supports-color
       - typescript
+
+  /expo-constants@55.0.10-canary-20260328-2049187(expo@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(typescript@5.9.3):
+    resolution: {integrity: sha512-PzwmIKGUME5eLi/D+rkD2eL5Ce8Y7ZF7pdMsZpnjky0IvBiJwcJa+/muM8/YIsLjmO2VbndWUGhdWde3iz4pQQ==}
+    peerDependencies:
+      expo: 55.0.10-canary-20260328-2049187
+      react-native: '*'
+    dependencies:
+      '@expo/config': 55.0.12-canary-20260328-2049187(typescript@5.9.3)
+      '@expo/env': 2.1.2-canary-20260328-2049187
+      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+      react-native: 0.83.2(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0)
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
+    dev: false
 
   /expo-crypto@55.0.0-canary-20260223-05214f1(expo@55.0.0-canary-20260223-05214f1):
     resolution: {integrity: sha512-nQzqHz4D0SfrZ68X5ynaXQ9lwsFqfuQza8uW3tsVUJXqY1CYRCZ1zWOoiDh0p+OY8R2eYkseqnIj1Lz4EvMoBw==}
@@ -7236,8 +7373,8 @@ packages:
       expo: 55.0.0-canary-20260223-05214f1
       react-native: '*'
     dependencies:
-      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
-      react-native: 0.83.2(@babel/core@7.29.0)(react@19.2.0)
+      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+      react-native: 0.83.2(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0)
 
   /expo-font@55.0.0-canary-20260223-05214f1(expo@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0):
     resolution: {integrity: sha512-SQ6J6kjIR5oQBsdy3ZmOMltsIKr7PF/sUbJ/usostGDvocVPtG/wCILOQGJ4AFnqBbiDCy3NSSrvxOVRcP9QXw==}
@@ -7246,10 +7383,10 @@ packages:
       react: '*'
       react-native: '*'
     dependencies:
-      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
       fontfaceobserver: 2.3.0
       react: 19.2.0
-      react-native: 0.83.2(@babel/core@7.29.0)(react@19.2.0)
+      react-native: 0.83.2(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0)
 
   /expo-glass-effect@55.0.0-canary-20260223-05214f1(expo@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0):
     resolution: {integrity: sha512-dS8ASEUftVAiCxK/1Q/IY7TiFO71QOhuxDl+ABX7DErhoGoRA+LG3OK0V+fhkG7EKJViU6qNfWShGg+cp1g3Gg==}
@@ -7292,7 +7429,7 @@ packages:
       expo: 55.0.0-canary-20260223-05214f1
       react: '*'
     dependencies:
-      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
       react: 19.2.0
 
   /expo-linear-gradient@55.0.0-canary-20260223-05214f1(expo@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0):
@@ -7341,7 +7478,27 @@ packages:
     dependencies:
       invariant: 2.2.4
       react: 19.2.0
-      react-native: 0.83.2(@babel/core@7.29.0)(react@19.2.0)
+      react-native: 0.83.2(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0)
+
+  /expo-notifications@55.0.15-canary-20260328-2049187(expo@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3):
+    resolution: {integrity: sha512-Z6eQ5HPs2q71O+tt+dmINigAT+WxB2pCp/EAmvhtIPVYhopSuxJDmPGd+sMjeUe/npiwJqbr2agDLPcH8NxsHA==}
+    peerDependencies:
+      expo: 55.0.10-canary-20260328-2049187
+      react: '*'
+      react-native: '*'
+    dependencies:
+      '@expo/image-utils': 0.8.13-canary-20260328-2049187
+      abort-controller: 3.0.0
+      badgin: 1.2.3
+      expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+      expo-application: 55.0.11-canary-20260328-2049187(expo@55.0.0-canary-20260223-05214f1)
+      expo-constants: 55.0.10-canary-20260328-2049187(expo@55.0.0-canary-20260223-05214f1)(react-native@0.83.2)(typescript@5.9.3)
+      react: 19.2.0
+      react-native: 0.83.2(@babel/core@7.29.0)(@types/react@19.2.14)(react@19.2.0)
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
+    dev: false
 
   /expo-router@55.0.0-canary-20260223-05214f1(@expo/log-box@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(@testing-library/react-native@12.9.0)(@types/react@19.2.14)(expo-constants@55.0.0-canary-20260223-05214f1)(expo-font@55.0.0-canary-20260223-05214f1)(expo-linking@55.0.0-canary-20260223-05214f1)(expo@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-gesture-handler@2.30.0)(react-native-reanimated@4.2.3)(react-native-safe-area-context@5.6.2)(react-native-screens@4.23.0)(react-native@0.83.2)(react@19.2.0):
     resolution: {integrity: sha512-xbtK/vM0N7DSpsoJ7NsXTXPjbrV7I9tnnU4Bwla4Jp/cNg1C+ddTjuM/rmFU1p2UMvHQiptdaV2J9MAsAoRdjw==}
@@ -7429,6 +7586,15 @@ packages:
       expo: 55.0.0-canary-20260223-05214f1
     dependencies:
       expo: 55.0.0-canary-20260223-05214f1(@babel/core@7.29.0)(@expo/dom-webview@55.0.0-canary-20260223-05214f1)(@expo/metro-runtime@55.0.0-canary-20260223-05214f1)(expo-router@55.0.0-canary-20260223-05214f1)(react-dom@19.2.0)(react-native-webview@13.16.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+    dev: false
+
+  /expo-server-sdk@6.1.0:
+    resolution: {integrity: sha512-ISuax1AQ7cpM5RAqcu8gVcoLL0ZKskJ5OLoMWmdITBe9nYjTucjdGyBq817YkIvTcj1pAUwx+9toUT7l/V7thA==}
+    engines: {node: '>=20'}
+    dependencies:
+      promise-limit: 2.7.0
+      promise-retry: 2.0.1
+      undici: 7.24.6
     dev: false
 
   /expo-server@55.0.0-canary-20260223-05214f1:
@@ -7592,6 +7758,7 @@ packages:
       - supports-color
       - typescript
       - utf-8-validate
+    dev: false
 
   /exponential-backoff@3.1.3:
     resolution: {integrity: sha512-ZgEeZXj30q+I0EN+CbSSpIyPaJ5HVQD18Z1m+u1FXbAeT94mr1zw50q4q6jiiC447Nl/YTcIYSAftiGqetwXCA==}
@@ -10199,6 +10366,18 @@ packages:
     resolution: {integrity: sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==}
     engines: {node: '>=0.4.0'}
 
+  /promise-limit@2.7.0:
+    resolution: {integrity: sha512-7nJ6v5lnJsXwGprnGXga4wx6d1POjvi5Qmf1ivTRxTjH4Z/9Czja/UCMLVmB9N93GeWOU93XaFaEt6jbuoagNw==}
+    dev: false
+
+  /promise-retry@2.0.1:
+    resolution: {integrity: sha512-y+WKFlBR8BGXnsNlIHFGPZmyDf3DFMoLhaflAnyZgV6rG6xu+JwesTo2Q9R6XwYmtmwAFCkAk3e35jEdoeh/3g==}
+    engines: {node: '>=10'}
+    dependencies:
+      err-code: 2.0.3
+      retry: 0.12.0
+    dev: false
+
   /promise-worker-transferable@1.0.4:
     resolution: {integrity: sha512-bN+0ehEnrXfxV2ZQvU2PetO0n4gqBD4ulq3MI1WOPLgr7/Mg9yRQkX5+0v1vagr74ZTsl7XtzlaYDo2EuCeYJw==}
     dependencies:
@@ -10544,6 +10723,7 @@ packages:
       - bufferutil
       - supports-color
       - utf-8-validate
+    dev: false
 
   /react-refresh@0.14.2:
     resolution: {integrity: sha512-jCvmsr+1IUSMUyzOkRcvnVbX3ZYC6g9TDrDbFuFmRDq7PD4yaGbLKNQL6k2jnArV8hjYxh7hVhAZB6s9HDGpZA==}
@@ -10738,6 +10918,11 @@ packages:
     dependencies:
       onetime: 2.0.1
       signal-exit: 3.0.7
+
+  /retry@0.12.0:
+    resolution: {integrity: sha512-9LkiTwjUh6rT555DtE9rTX+BKByPfrMzEAtnlEtdEwr3Nkffwiihqe2bWADg+OQRjt9gl6ICdmB/ZFDCGAtSow==}
+    engines: {node: '>= 4'}
+    dev: false
 
   /reusify@1.1.0:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
@@ -11632,6 +11817,11 @@ packages:
 
   /undici-types@7.24.5:
     resolution: {integrity: sha512-kNh333UBSbgK35OIW7FwJTr9tTfVIG51Fm1tSVT7m8foPHfDVjsb7OIee/q/rs3bB2aV/3qOPgG5mHNWl1odiA==}
+    dev: false
+
+  /undici@7.24.6:
+    resolution: {integrity: sha512-Xi4agocCbRzt0yYMZGMA6ApD7gvtUFaxm4ZmeacWI4cZxaF6C+8I8QfofC20NAePiB/IcvZmzkJ7XPa471AEtA==}
+    engines: {node: '>=20.18.1'}
     dev: false
 
   /unicode-canonical-property-names-ecmascript@2.0.1:

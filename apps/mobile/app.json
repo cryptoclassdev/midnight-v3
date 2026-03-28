@@ -44,7 +44,14 @@
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",
-      "./plugins/wallet-queries"
+      "./plugins/wallet-queries",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/adaptive-icon.png",
+          "color": "#030303"
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true

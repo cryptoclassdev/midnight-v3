@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Keyboard } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Keyboard, Switch, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { useAppStore, QUICK_BET_OPTIONS, QUICK_BET_MIN } from "@/lib/store";
+import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import * as haptics from "@/lib/haptics";
@@ -13,9 +14,11 @@ export default function ProfileScreen() {
   const theme = useAppStore((s) => s.theme);
   const quickBetAmount = useAppStore((s) => s.quickBetAmount);
   const setQuickBetAmount = useAppStore((s) => s.setQuickBetAmount);
+  const notificationPermission = useAppStore((s) => s.notificationPermission);
   const themeColors = colors[theme];
   const { account } = useMobileWallet();
   const walletAddress = account?.address.toString() ?? null;
+  const { preferences: notifPrefs, updatePreference } = useNotificationPreferences();
 
   const isPreset = (QUICK_BET_OPTIONS as readonly number[]).includes(quickBetAmount);
   const [showCustomInput, setShowCustomInput] = useState(!isPreset);
@@ -163,6 +166,70 @@ export default function ProfileScreen() {
           )}
         </View>
 
+        {/* Notifications */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionAccent, { backgroundColor: themeColors.accent }]} />
+            <Text
+              style={[styles.sectionTitle, { color: themeColors.textSecondary }]}
+            >
+              NOTIFICATIONS
+            </Text>
+          </View>
+          {notificationPermission === "denied" ? (
+            <Pressable onPress={() => Linking.openSettings()}>
+              <Text style={[styles.sectionDescription, { color: themeColors.negative }]}>
+                Notifications are disabled. Tap to open settings.
+              </Text>
+            </Pressable>
+          ) : (
+            <>
+              <View style={[styles.toggleRow, { borderColor: themeColors.cardBorder }]}>
+                <View style={styles.toggleLabel}>
+                  <Text style={[styles.toggleTitle, { color: themeColors.text }]}>Market Movers</Text>
+                  <Text style={[styles.toggleSubtitle, { color: themeColors.textMuted }]}>
+                    Price swings over 5% on major coins
+                  </Text>
+                </View>
+                <Switch
+                  value={notifPrefs.marketMovers}
+                  onValueChange={(v) => { haptics.selection(); updatePreference({ marketMovers: v }); }}
+                  trackColor={{ false: themeColors.trackBg, true: themeColors.accentMint + "60" }}
+                  thumbColor={notifPrefs.marketMovers ? themeColors.accentMint : themeColors.textMuted}
+                />
+              </View>
+              <View style={[styles.toggleRow, { borderColor: themeColors.cardBorder }]}>
+                <View style={styles.toggleLabel}>
+                  <Text style={[styles.toggleTitle, { color: themeColors.text }]}>Breaking News</Text>
+                  <Text style={[styles.toggleSubtitle, { color: themeColors.textMuted }]}>
+                    Major regulatory and market events
+                  </Text>
+                </View>
+                <Switch
+                  value={notifPrefs.breakingNews}
+                  onValueChange={(v) => { haptics.selection(); updatePreference({ breakingNews: v }); }}
+                  trackColor={{ false: themeColors.trackBg, true: themeColors.accentMint + "60" }}
+                  thumbColor={notifPrefs.breakingNews ? themeColors.accentMint : themeColors.textMuted}
+                />
+              </View>
+              <View style={[styles.toggleRow, { borderColor: themeColors.cardBorder }]}>
+                <View style={styles.toggleLabel}>
+                  <Text style={[styles.toggleTitle, { color: themeColors.text }]}>Bet Settlements</Text>
+                  <Text style={[styles.toggleSubtitle, { color: themeColors.textMuted }]}>
+                    When your predictions resolve
+                  </Text>
+                </View>
+                <Switch
+                  value={notifPrefs.predictionSettled}
+                  onValueChange={(v) => { haptics.selection(); updatePreference({ predictionSettled: v }); }}
+                  trackColor={{ false: themeColors.trackBg, true: themeColors.accentMint + "60" }}
+                  thumbColor={notifPrefs.predictionSettled ? themeColors.accentMint : themeColors.textMuted}
+                />
+              </View>
+            </>
+          )}
+        </View>
+
         {/* About */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -274,6 +341,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     minHeight: 44,
+  },
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    borderBottomWidth: 0.5,
+  },
+  toggleLabel: {
+    flex: 1,
+    marginRight: 12,
+  },
+  toggleTitle: {
+    fontFamily: fonts.body.regular,
+    fontSize: fontSize.base,
+    marginBottom: 2,
+  },
+  toggleSubtitle: {
+    fontFamily: fonts.body.light,
+    fontSize: fontSize.xs,
   },
   row: {
     flexDirection: "row",

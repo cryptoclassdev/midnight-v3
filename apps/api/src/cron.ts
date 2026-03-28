@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { processArticles, processTwitterItems } from "./services/article-processor.service";
 import { fetchMarketData } from "./services/coingecko.service";
 import { refreshMarketPrices, backfillMarketMatches } from "./services/jupiter-prediction.service";
+import { processExpoPushReceipts, cleanupOldSnapshots } from "./services/notification.service";
 
 export function startCronJobs(): void {
   // Fetch articles every 15 minutes (market matching happens inline)
@@ -38,7 +39,13 @@ export function startCronJobs(): void {
     );
   });
 
-  console.log("[Cron] Scheduled: articles (15min), twitter (15min staggered), market (5min), predictions (5min), backfill (30min)");
+  // Hourly: clean up old price snapshots + process Expo push receipts
+  cron.schedule("0 * * * *", async () => {
+    console.log("[Cron] Running notification maintenance...");
+    await Promise.allSettled([cleanupOldSnapshots(), processExpoPushReceipts()]);
+  });
+
+  console.log("[Cron] Scheduled: articles (15min), twitter (15min staggered), market (5min), predictions (5min), backfill (30min), notifications (1h)");
 
   // Run initial fetch on startup
   setTimeout(async () => {

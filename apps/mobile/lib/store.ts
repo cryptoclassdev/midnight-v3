@@ -7,6 +7,8 @@ export const QUICK_BET_OPTIONS = [5, 10, 25, 50] as const;
 export const QUICK_BET_MIN = 5;
 export type QuickBetPreset = (typeof QUICK_BET_OPTIONS)[number];
 
+type NotificationPermission = "undetermined" | "granted" | "denied";
+
 interface AppState {
   selectedCategory: "all" | "crypto" | "ai";
   theme: ThemeMode;
@@ -14,6 +16,9 @@ interface AppState {
   readArticleIds: Record<string, true>;
   hasCompletedOnboarding: boolean;
   quickBetAmount: number;
+  notificationPermission: NotificationPermission;
+  expoPushToken: string | null;
+  feedSessionCount: number;
   setCategory: (category: "all" | "crypto" | "ai") => void;
   setTheme: (theme: ThemeMode) => void;
   toggleTheme: () => void;
@@ -21,6 +26,9 @@ interface AppState {
   markAsRead: (id: string) => void;
   completeOnboarding: () => void;
   setQuickBetAmount: (amount: number) => void;
+  setNotificationPermission: (status: NotificationPermission) => void;
+  setExpoPushToken: (token: string | null) => void;
+  incrementFeedSession: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -32,6 +40,9 @@ export const useAppStore = create<AppState>()(
       readArticleIds: {},
       hasCompletedOnboarding: false,
       quickBetAmount: 5,
+      notificationPermission: "undetermined",
+      expoPushToken: null,
+      feedSessionCount: 0,
 
       setCategory: (category) => set({ selectedCategory: category }),
 
@@ -54,6 +65,11 @@ export const useAppStore = create<AppState>()(
 
       setQuickBetAmount: (amount) =>
         set({ quickBetAmount: Math.max(QUICK_BET_MIN, Math.floor(amount)) }),
+
+      setNotificationPermission: (status) => set({ notificationPermission: status }),
+      setExpoPushToken: (token) => set({ expoPushToken: token }),
+      incrementFeedSession: () =>
+        set((state) => ({ feedSessionCount: state.feedSessionCount + 1 })),
     }),
     {
       name: "mintfeed-app-store",
@@ -64,6 +80,9 @@ export const useAppStore = create<AppState>()(
         readArticleIds: state.readArticleIds,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         quickBetAmount: state.quickBetAmount,
+        notificationPermission: state.notificationPermission,
+        expoPushToken: state.expoPushToken,
+        feedSessionCount: state.feedSessionCount,
       }),
       onRehydrateStorage: () => (state) => {
         if (state && state.quickBetAmount < QUICK_BET_MIN) {
