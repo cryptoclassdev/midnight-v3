@@ -77,6 +77,7 @@ export default function RootLayout() {
           identity={APP_IDENTITY}
         >
           <StatusBar style={theme === "dark" ? "light" : "dark"} />
+          <NotificationBootstrap />
           <OnboardingFlow />
         </MobileWalletProvider>
       </QueryClientProvider>
