@@ -133,6 +133,76 @@ railway run -- npx prisma db push --schema packages/db/prisma/schema.prisma
 develop on stage → test on staging → PR stage → main → production
 ```
 
+## Push Notifications
+
+### Firebase / FCM
+
+| Item | Value |
+|------|-------|
+| Firebase project | `midnight-adc10` |
+| Firebase console | [console.firebase.google.com/project/midnight-adc10](https://console.firebase.google.com/project/midnight-adc10) |
+| Android package | `com.mintfeed.app` |
+| `google-services.json` | `apps/mobile/google-services.json` (gitignored, decoded from GitHub secret in CI) |
+| FCM auth | V1 API via service account `firebase-adminsdk-fbsvc@midnight-adc10.iam.gserviceaccount.com` |
+
+### Expo Push Service
+
+| Item | Value |
+|------|-------|
+| Expo account | `sebmonty` |
+| EAS project ID | `d1a61761-77d0-4831-ac18-eb984eca0f29` |
+| EAS slug | `mintfeed` (must match `slug` in `apps/mobile/app.json`) |
+| FCM V1 key | Uploaded to Expo via GraphQL, linked to `com.mintfeed.app` Android credentials |
+| Server SDK | `expo-server-sdk` in `apps/api` — sends to Expo, which routes through FCM |
+
+### Notification Architecture
+
+```
+Mobile app                          Server (Hono)                    Expo Push Service
+─────────                          ──────────────                   ─────────────────
+getExpoPushTokenAsync()  ──POST──▶ /notifications/register
+                                   stores PushDevice in DB
+
+Trigger (cron/article/market) ──▶  broadcastNotification()  ──POST──▶ exp.host/--/api/v2/push/send
+                                   sendSettlementNotification()       │
+                                                                      ▼
+                                                                   FCM V1 API ──▶ Android device
+```
+
+### Credentials & Secrets
+
+| Secret | Where | Purpose |
+|--------|-------|---------|
+| `GOOGLE_SERVICES_JSON` | GitHub Actions | Base64-encoded `google-services.json`, decoded before `expo prebuild` |
+| FCM V1 service account key | Expo (EAS credentials) | Allows Expo push service to send via FCM V1 |
+| `google-services.json` | Local (`apps/mobile/`, gitignored) | Firebase client config for local/dev builds |
+
+### Android Notification Channels
+
+Configured in `apps/mobile/hooks/useNotifications.ts`, referenced in `apps/api/src/services/notification.service.ts`:
+
+| Channel ID | Name | Importance | Maps to |
+|------------|------|------------|---------|
+| `breaking-news` | Breaking News | HIGH | `BREAKING_NEWS` |
+| `market-movers` | Market Movers | DEFAULT | `MARKET_MOVER` |
+| `settlements` | Bet Settlements | HIGH | `PREDICTION_SETTLED` |
+
+### Throttling
+
+- **Daily cap:** 3 notifications per device (settlements exempt)
+- **Cooldown:** 30 minutes between sends per device
+- **Quiet hours:** Device-local time, default 23:00–07:00
+- **Dedup:** `referenceId` prevents duplicate sends for same event
+
+### Debug & Test Endpoints (staging only)
+
+- `GET /api/v1/notifications/debug` — lists registered devices + recent logs
+- `POST /api/v1/notifications/test` — sends test notification to all active devices
+
+### iOS (not yet configured)
+
+No APNs credentials uploaded. No `GoogleService-Info.plist` (not needed — iOS uses APNs, not FCM). To set up: `eas credentials -p ios` auto-generates APNs key.
+
 ## Environment Variables
 
 See `.env.example`. Required: `DATABASE_URL`, `DIRECT_URL`, `GEMINI_API_KEY`, `COINGECKO_API_URL`, `PORT`. Mobile needs `EXPO_PUBLIC_API_URL`.
