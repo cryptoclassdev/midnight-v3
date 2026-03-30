@@ -19,7 +19,8 @@ function getDeviceLocalHour(timezoneOffset: number): number {
 
 function isQuietHours(localHour: number, start: number, end: number): boolean {
   if (start <= end) {
-    return localHour >= start || localHour < end;
+    // Non-wrapping: e.g. start=9, end=17
+    return localHour >= start && localHour < end;
   }
   // Wraps midnight: e.g. start=23, end=7
   return localHour >= start || localHour < end;

@@ -1,5 +1,8 @@
 import { Hono } from "hono";
+import Expo from "expo-server-sdk";
 import { prisma } from "@mintfeed/db";
+
+const expo = new Expo();
 
 export const notificationRoutes = new Hono();
 
@@ -125,5 +128,97 @@ notificationRoutes.get("/notifications/preferences", async (c) => {
   } catch (error) {
     console.error("[Notifications] Preferences fetch failed:", error);
     return c.json({ error: "Failed to fetch preferences" }, 500);
+  }
+});
+
+// Debug: list registered devices and recent notification logs
+notificationRoutes.get("/notifications/debug", async (c) => {
+  try {
+    const devices = await prisma.pushDevice.findMany({
+      select: {
+        id: true,
+        expoPushToken: true,
+        walletAddress: true,
+        platform: true,
+        isActive: true,
+        timezoneOffset: true,
+        createdAt: true,
+        preferences: {
+          select: {
+            marketMovers: true,
+            breakingNews: true,
+            predictionSettled: true,
+            quietHoursStart: true,
+            quietHoursEnd: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    });
+
+    const recentLogs = await prisma.notificationLog.findMany({
+      select: {
+        id: true,
+        type: true,
+        title: true,
+        body: true,
+        sentAt: true,
+        expoReceiptId: true,
+        deviceId: true,
+      },
+      orderBy: { sentAt: "desc" },
+      take: 20,
+    });
+
+    return c.json({ devices, recentLogs });
+  } catch (error) {
+    console.error("[Notifications] Debug query failed:", error);
+    return c.json({ error: "Debug query failed" }, 500);
+  }
+});
+
+// Test: send a test notification to all active devices
+notificationRoutes.post("/notifications/test", async (c) => {
+  try {
+    const devices = await prisma.pushDevice.findMany({
+      where: { isActive: true },
+      select: { id: true, expoPushToken: true },
+    });
+
+    if (devices.length === 0) {
+      return c.json({ error: "No active devices registered", devices: [] }, 404);
+    }
+
+    const messages = devices
+      .filter((d) => Expo.isExpoPushToken(d.expoPushToken))
+      .map((d) => ({
+        to: d.expoPushToken,
+        sound: "default" as const,
+        title: "MintFeed Test",
+        body: "If you see this, push notifications are working!",
+        data: { screen: "market" },
+      }));
+
+    if (messages.length === 0) {
+      return c.json({ error: "No valid Expo push tokens found", devices }, 400);
+    }
+
+    const chunks = expo.chunkPushNotifications(messages);
+    const tickets = [];
+
+    for (const chunk of chunks) {
+      const result = await expo.sendPushNotificationsAsync(chunk);
+      tickets.push(...result);
+    }
+
+    return c.json({
+      sent: messages.length,
+      totalDevices: devices.length,
+      tickets,
+    });
+  } catch (error) {
+    console.error("[Notifications] Test send failed:", error);
+    return c.json({ error: "Test send failed" }, 500);
   }
 });
