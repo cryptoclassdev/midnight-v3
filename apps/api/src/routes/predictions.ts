@@ -38,35 +38,43 @@ export const predictionRoutes = new Hono();
 
 predictionRoutes.get("/predictions/markets/:marketId", async (c) => {
   const { marketId } = c.req.param();
-  const data = await jupiter.get(`markets/${marketId}`).json<any>();
-  // Reject non-binary markets
-  if (!data?.pricing || data.pricing.buyYesPriceUsd <= 0 || data.pricing.buyNoPriceUsd <= 0) {
-    return c.json({ error: "Market is not a binary Yes/No market" }, 404);
-  }
-
-  // Fall back to event-level volume when market pricing reports 0
-  if (!data.pricing.volume || data.pricing.volume === 0) {
-    const dbMarket = await prisma.predictionMarket.findUnique({
-      where: { id: marketId },
-      select: { eventId: true },
-    });
-    if (dbMarket?.eventId) {
-      try {
-        const event = await jupiter.get(`events/${dbMarket.eventId}`).json<any>();
-        if (event?.volumeUsd) {
-          data.pricing.volume = Number(event.volumeUsd);
-        }
-      } catch { /* keep 0 */ }
+  try {
+    const data = await jupiter.get(`markets/${marketId}`).json<any>();
+    // Reject non-binary markets
+    if (!data?.pricing || data.pricing.buyYesPriceUsd <= 0 || data.pricing.buyNoPriceUsd <= 0) {
+      return c.json({ error: "Market is not a binary Yes/No market" }, 404);
     }
-  }
 
-  return c.json(data);
+    // Fall back to event-level volume when market pricing reports 0
+    if (!data.pricing.volume || data.pricing.volume === 0) {
+      const dbMarket = await prisma.predictionMarket.findUnique({
+        where: { id: marketId },
+        select: { eventId: true },
+      });
+      if (dbMarket?.eventId) {
+        try {
+          const event = await jupiter.get(`events/${dbMarket.eventId}`).json<any>();
+          if (event?.volumeUsd) {
+            data.pricing.volume = Number(event.volumeUsd);
+          }
+        } catch { /* keep 0 */ }
+      }
+    }
+
+    return c.json(data);
+  } catch (err) {
+    return forwardJupiterError(err, c);
+  }
 });
 
 predictionRoutes.get("/predictions/orderbook/:marketId", async (c) => {
   const { marketId } = c.req.param();
-  const data = await jupiter.get(`orderbook/${marketId}`).json();
-  return c.json(data);
+  try {
+    const data = await jupiter.get(`orderbook/${marketId}`).json();
+    return c.json(data);
+  } catch (err) {
+    return forwardJupiterError(err, c);
+  }
 });
 
 // --- Trading Status ---
