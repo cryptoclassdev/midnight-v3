@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@wallet-ui/react-native-web3js@4.0.1':
+    hash: em4jhh3glyclnk3wmlyl3dpj3e
+    path: patches/@wallet-ui__react-native-web3js@4.0.1.patch
+
 importers:
 
   .:
@@ -123,7 +128,7 @@ importers:
         version: 5.91.3(react@19.2.0)
       '@wallet-ui/react-native-web3js':
         specifier: ^4.0.1
-        version: 4.0.1(@solana/kit@6.5.0)(fastestsmallesttextencoderdecoder@1.0.22)(react-dom@19.2.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
+        version: 4.0.1(patch_hash=em4jhh3glyclnk3wmlyl3dpj3e)(@solana/kit@6.5.0)(fastestsmallesttextencoderdecoder@1.0.22)(react-dom@19.2.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3)
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -5827,7 +5832,7 @@ packages:
       nanostores: 1.0.1
     dev: false
 
-  /@wallet-ui/react-native-web3js@4.0.1(@solana/kit@6.5.0)(fastestsmallesttextencoderdecoder@1.0.22)(react-dom@19.2.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3):
+  /@wallet-ui/react-native-web3js@4.0.1(patch_hash=em4jhh3glyclnk3wmlyl3dpj3e)(@solana/kit@6.5.0)(fastestsmallesttextencoderdecoder@1.0.22)(react-dom@19.2.0)(react-native@0.83.2)(react@19.2.0)(typescript@5.9.3):
     resolution: {integrity: sha512-uF4YTXFciW8AbKVUhX/qTf69YsfPQVhNsu+MVoA+R2LLxJxJcLNLFloDpiNK+skrEIGoVCZRo+U/KiLgRLRrhQ==}
     engines: {node: '>=20.18.0'}
     peerDependencies:
@@ -5856,6 +5861,7 @@ packages:
       - typescript
       - utf-8-validate
     dev: false
+    patched: true
 
   /@webgpu/types@0.1.69:
     resolution: {integrity: sha512-RPmm6kgRbI8e98zSD3RVACvnuktIja5+yLgDAkTmxLr90BEwdTXRQWNLF3ETTTyH/8mKhznZuN5AveXYFEsMGQ==}

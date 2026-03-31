@@ -16,12 +16,12 @@ import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import { SwipeBetCard } from "./SwipeBetCard";
-import { getNewsCardBottomPadding, getImageHeightRatio, getMaxSummaryLines } from "./news-card-layout";
+import { getNewsCardBottomPadding } from "./news-card-layout";
 import type { Article } from "@mintfeed/shared";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-// IMAGE_HEIGHT_RATIO now computed dynamically via getImageHeightRatio()
+const IMAGE_HEIGHT_RATIO = 0.24;
 
 const NEGATIVE_KEYWORDS = [
   "crash", "drop", "fall", "dump", "panic", "hack", "ban", "plunge",
@@ -111,7 +111,7 @@ export const NewsCard = memo(function NewsCard({ article, onSwipeBet, walletConn
   const { bottom: safeBottom } = useSafeAreaInsets();
   const theme = useAppStore((s) => s.theme);
   const themeColors = colors[theme];
-  const imageHeight = screenHeight * getImageHeightRatio(screenHeight);
+  const imageHeight = screenHeight * IMAGE_HEIGHT_RATIO;
   const bottomPadding = getNewsCardBottomPadding(safeBottom);
 
   // Animation values
@@ -148,12 +148,6 @@ export const NewsCard = memo(function NewsCard({ article, onSwipeBet, walletConn
       return op && "Yes" in op && "No" in op;
     });
 
-  const visibleMarketCount = Math.min(markets.length, MAX_VISIBLE_MARKETS);
-  const maxSummaryLines = getMaxSummaryLines({
-    screenHeight,
-    safeBottom,
-    marketCount: visibleMarketCount,
-  });
 
   // Animated styles
   const linkAnimatedStyle = useAnimatedStyle(() => ({
@@ -306,15 +300,11 @@ export const NewsCard = memo(function NewsCard({ article, onSwipeBet, walletConn
           </AnimatedPressable>
         </View>
 
-        {/* Summary — dynamically truncated to fit available space */}
+        {/* Summary */}
         <Text
-          numberOfLines={maxSummaryLines}
           style={[
             styles.summary,
-            {
-              color: themeColors.textSecondary,
-              textAlign: 'left',
-            }
+            { color: themeColors.textSecondary },
           ]}
         >
           {cleanSummary}
@@ -455,26 +445,26 @@ const styles = StyleSheet.create({
   accentLine: {
     width: 32,
     height: 3,
-    borderRadius: 1.5, // Rounded ends for softer appearance
-    marginBottom: 12,
+    borderRadius: 1.5,
+    marginBottom: 8,
   },
   title: {
     fontFamily: fonts.body.bold,
     fontSize: 22,
     lineHeight: 30,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   summary: {
     fontFamily: fonts.body.regular,
     fontSize: 15,
     lineHeight: 24,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   meta: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 10,
+    marginBottom: 6,
   },
   metaText: {
     fontFamily: fonts.mono.regular,
@@ -502,8 +492,8 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   marketsSection: {
-    gap: 6,
-    marginTop: 4,
+    gap: 4,
+    marginTop: 2,
   },
   marketsHeader: {
     flexDirection: "row",
@@ -516,7 +506,7 @@ const styles = StyleSheet.create({
     letterSpacing: letterSpacing.wider,
   },
   marketsStack: {
-    gap: 6,
+    gap: 4,
   },
   createMarketButton: {
     flexDirection: "row",
