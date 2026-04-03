@@ -4,7 +4,6 @@ import * as haptics from "@/lib/haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -22,6 +21,8 @@ import type { Article } from "@mintfeed/shared";
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const IMAGE_HEIGHT_RATIO = 0.24;
+const IMAGE_HEIGHT_RATIO_COMPACT = 0.18;
+const COMPACT_SCREEN_THRESHOLD = 780;
 
 const NEGATIVE_KEYWORDS = [
   "crash", "drop", "fall", "dump", "panic", "hack", "ban", "plunge",
@@ -111,7 +112,8 @@ export const NewsCard = memo(function NewsCard({ article, onSwipeBet, walletConn
   const { bottom: safeBottom } = useSafeAreaInsets();
   const theme = useAppStore((s) => s.theme);
   const themeColors = colors[theme];
-  const imageHeight = screenHeight * IMAGE_HEIGHT_RATIO;
+  const imageRatio = screenHeight < COMPACT_SCREEN_THRESHOLD ? IMAGE_HEIGHT_RATIO_COMPACT : IMAGE_HEIGHT_RATIO;
+  const imageHeight = screenHeight * imageRatio;
   const bottomPadding = getNewsCardBottomPadding(safeBottom);
 
   // Animation values
@@ -313,16 +315,6 @@ export const NewsCard = memo(function NewsCard({ article, onSwipeBet, walletConn
         {/* Prediction markets with staggered enter animation */}
         {markets.length > 0 ? (
           <Animated.View style={[styles.marketsSection, marketsAnimatedStyle]}>
-            <View style={styles.marketsHeader}>
-              <Ionicons
-                name="pulse-outline"
-                size={12}
-                color={themeColors.accentMint}
-              />
-              <Text style={[styles.marketsLabel, { color: themeColors.accentMint }]}>
-                RELATED MARKETS
-              </Text>
-            </View>
             <View style={styles.marketsStack}>
               {markets.slice(0, MAX_VISIBLE_MARKETS).map((market) => (
                 <SwipeBetCard
@@ -477,12 +469,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   sourceLinkTouchable: {
-    minHeight: 40, // Minimum 40px hit area
-    minWidth: 40,
     justifyContent: "center" as const,
     alignItems: "flex-start" as const,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
   },
   sourceLink: {
     fontFamily: fonts.mono.regular,
@@ -493,17 +481,7 @@ const styles = StyleSheet.create({
   },
   marketsSection: {
     gap: 4,
-    marginTop: 2,
-  },
-  marketsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-  marketsLabel: {
-    fontFamily: fonts.mono.bold,
-    fontSize: 9,
-    letterSpacing: letterSpacing.wider,
+    marginTop: 10,
   },
   marketsStack: {
     gap: 4,
