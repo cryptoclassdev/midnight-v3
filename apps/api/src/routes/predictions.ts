@@ -29,7 +29,8 @@ async function forwardJupiterError(err: unknown, c: any) {
     const message = typeof body?.message === "string" ? body.message : "Request failed. Please try again.";
     return c.json({ error: message }, status >= 400 && status < 500 ? status : 502);
   }
-  throw err;
+  console.error("[Jupiter] Non-HTTP error:", err);
+  return c.json({ error: "Service temporarily unavailable" }, 502);
 }
 
 export const predictionRoutes = new Hono();

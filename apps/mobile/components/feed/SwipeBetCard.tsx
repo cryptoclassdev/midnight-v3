@@ -98,7 +98,6 @@ export const SwipeBetCard = memo(function SwipeBetCard({
 
   const handleSwipeBet = useCallback(
     (side: "yes" | "no") => {
-      haptics.heavyImpact();
       onSwipeBet(market.id, side);
     },
     [market.id, onSwipeBet],

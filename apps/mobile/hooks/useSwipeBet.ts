@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { useAppStore, QUICK_BET_MIN } from "@/lib/store";
 import { useCreateOrder } from "@/hooks/usePredictionTrading";
@@ -33,7 +33,16 @@ export function useSwipeBet() {
 
   const executeBet = useCallback(
     async (marketId: string, side: "yes" | "no", amount: number, toastId: string) => {
-      if (!walletAddress) return;
+      if (!walletAddress) {
+        updateToast(toastId, {
+          variant: "error",
+          title: "Wallet Disconnected",
+          message: "Reconnect your wallet to place bets.",
+          duration: 3000,
+          onTap: null,
+        });
+        return;
+      }
 
       if (amount < QUICK_BET_MIN) {
         updateToast(toastId, {
@@ -85,12 +94,16 @@ export function useSwipeBet() {
       } catch (err: unknown) {
         haptics.error();
         const message = err instanceof Error ? err.message : String(err);
+        const retryable = err instanceof Error && (err as any).retryable === true;
         updateToast(toastId, {
           variant: "error",
           title: "Trade Failed",
-          message,
-          duration: 4000,
+          message: retryable ? `${message} Tap to retry.` : message,
+          duration: retryable ? 6000 : 4000,
           shake: true,
+          onTap: retryable
+            ? () => { executeBet(marketId, side, amount, toastId); }
+            : undefined,
         });
       }
     },
@@ -113,6 +126,24 @@ export function useSwipeBet() {
     }
   }, []);
 
+  // Clean up pending bet timer and toast on unmount
+  useEffect(() => {
+    return () => {
+      if (pendingRef.current) {
+        clearTimeout(pendingRef.current.timer);
+        const { toastId } = pendingRef.current;
+        pendingRef.current = null;
+        updateToast(toastId, {
+          variant: "info",
+          title: "Bet Cancelled",
+          message: "Navigation interrupted the bet.",
+          duration: 2000,
+          onTap: null,
+        });
+      }
+    };
+  }, []);
+
   const swipeBet = useCallback(
     (marketId: string, side: "yes" | "no") => {
       if (!walletAddress) {
@@ -132,6 +163,8 @@ export function useSwipeBet() {
       }
 
       const amount = quickBetAmount;
+
+      haptics.heavyImpact();
 
       // Show undo toast — duration 0 (no auto-dismiss) so the toast stays
       // alive for executeBet to update. It will be dismissed or updated by
