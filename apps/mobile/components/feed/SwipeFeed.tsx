@@ -193,7 +193,7 @@ export function SwipeFeed() {
     );
   }
 
-  if (isError) {
+  if (isError && articles.length === 0) {
     return (
       <View style={styles.centered}>
         <Text style={[styles.statusText, { color: themeColors.negative }]}>

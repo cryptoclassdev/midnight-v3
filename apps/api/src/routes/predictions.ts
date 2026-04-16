@@ -62,7 +62,16 @@ predictionRoutes.get("/predictions/markets/:marketId", async (c) => {
       }
     }
 
-    return c.json(data);
+    // Normalize: Jupiter returns title/rulesPrimary at top level,
+    // but PredictionMarketDetail expects them nested under metadata
+    const { title, rulesPrimary, ...rest } = data;
+    return c.json({
+      ...rest,
+      metadata: {
+        title: title ?? "Market",
+        rulesPrimary: rulesPrimary ?? undefined,
+      },
+    });
   } catch (err) {
     return forwardJupiterError(err, c);
   }

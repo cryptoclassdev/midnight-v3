@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   heading: {
-    fontFamily: fonts.display.regular,
+    fontFamily: fonts.brand.bold,
     fontSize: fontSize.xxl,
     marginBottom: 4,
   },

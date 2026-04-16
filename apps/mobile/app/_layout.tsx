@@ -1,7 +1,8 @@
 import { useEffect } from "react";
+import { AppState, type AppStateStatus } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MobileWalletProvider } from "@wallet-ui/react-native-web3js";
 import { Anton_400Regular } from "@expo-google-fonts/anton";
 import {
@@ -64,6 +65,17 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
+
+  // Refetch active queries when app returns to foreground
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (status: AppStateStatus) => {
+      focusManager.setFocused(status === "active");
+    });
+    return () => sub.remove();
+  }, []);
+
+  // TODO: Add NetInfo → onlineManager wiring after next native rebuild
+  // (requires `npx expo prebuild` to link @react-native-community/netinfo)
 
   if (!fontsLoaded) {
     return null;

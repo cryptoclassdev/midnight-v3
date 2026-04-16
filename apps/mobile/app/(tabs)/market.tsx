@@ -1,6 +1,6 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, Pressable, TextInput } from "react-native";
-import { FlashList } from "@shopify/flash-list";
+import { FlashList, type FlashListRef } from "@shopify/flash-list";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { useMarket } from "@/hooks/useMarket";
@@ -117,6 +117,20 @@ export default function MarketScreen() {
   const themeColors = colors[theme];
   const { data, isLoading, isError, refetch } = useMarket();
   const [searchQuery, setSearchQuery] = useState("");
+  const listRef = useRef<FlashListRef<RankedCoin>>(null);
+
+  // Reset scroll to top when search is cleared so header + top coins are visible
+  const prevQuery = useRef(searchQuery);
+  useEffect(() => {
+    if (prevQuery.current && !searchQuery) {
+      // Delay to let FlashList re-layout with the header component
+      const id = setTimeout(() => {
+        listRef.current?.scrollToOffset({ offset: 0, animated: true });
+      }, 100);
+      return () => clearTimeout(id);
+    }
+    prevQuery.current = searchQuery;
+  }, [searchQuery]);
 
   const rankedCoins: RankedCoin[] = useMemo(() => {
     const coins = data?.data ?? EMPTY_COINS;
@@ -182,6 +196,7 @@ export default function MarketScreen() {
         )}
       </View>
       <FlashList
+        ref={listRef}
         data={filteredCoins}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
