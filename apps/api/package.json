@@ -11,6 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@extractus/article-extractor": "^8.0.20",
     "@google/generative-ai": "^0.21.0",
     "@hono/node-server": "^1.13.0",
     "@mintfeed/db": "workspace:*",
