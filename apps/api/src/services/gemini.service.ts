@@ -26,7 +26,7 @@ export async function rewriteArticle(
   originalBody: string
 ): Promise<GeminiResult> {
   try {
-    const prompt = `Original title: ${originalTitle}\n\nOriginal content: ${originalBody.slice(0, 2000)}`;
+    const prompt = `Original title: ${originalTitle}\n\nOriginal content: ${originalBody.slice(0, 6000)}`;
 
     const result = await model.generateContent({
       contents: [

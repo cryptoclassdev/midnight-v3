@@ -2,12 +2,29 @@ import Parser from "rss-parser";
 import { prisma } from "@mintfeed/db";
 import type { Category } from "@mintfeed/db";
 
-const parser = new Parser({
+const parser = new Parser<unknown, { contentEncoded?: string }>({
   timeout: 10_000,
   headers: {
     "User-Agent": "Midnight/1.0",
   },
+  customFields: {
+    item: [["content:encoded", "contentEncoded"]],
+  },
 });
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&[a-z]+;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 export interface ParsedFeedItem {
   title: string;
@@ -53,15 +70,18 @@ export async function fetchAllFeeds(): Promise<ParsedFeedItem[]> {
           }
           return true;
         })
-        .map((item) => ({
-          title: item.title ?? "Untitled",
-          link: item.link ?? "",
-          content: item.contentSnippet ?? item.content ?? "",
-          pubDate: item.pubDate ?? new Date().toISOString(),
-          imageUrl: extractImageUrl(item),
-          sourceName: source.name,
-          category: source.category,
-        }));
+        .map((item) => {
+          const rich = item.contentEncoded ?? item.content ?? item.contentSnippet ?? "";
+          return {
+            title: item.title ?? "Untitled",
+            link: item.link ?? "",
+            content: stripHtml(rich),
+            pubDate: item.pubDate ?? new Date().toISOString(),
+            imageUrl: extractImageUrl(item),
+            sourceName: source.name,
+            category: source.category,
+          };
+        });
 
       await prisma.feedSource.update({
         where: { id: source.id },
