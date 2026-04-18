@@ -1,0 +1,53 @@
+name: dApp Store Submit
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      whats_new:
+        description: "What's new in this release"
+        required: true
+        default: "Bug fixes and improvements"
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build production APK via EAS
+        working-directory: apps/mobile
+        run: |
+          eas build \
+            --platform android \
+            --profile production \
+            --non-interactive \
+            --wait \
+            --output ../../build.apk
+
+      - name: Submit to Solana dApp Store
+        env:
+          DAPP_STORE_API_KEY: ${{ secrets.DAPP_STORE_API_KEY }}
+        run: |
+          WHATS_NEW="${{ github.event.inputs.whats_new || format('Release {0}', github.ref_name) }}"
+          pnpm dapp-store:submit \
+            --apk-file ./build.apk \
+            --whats-new "$WHATS_NEW"

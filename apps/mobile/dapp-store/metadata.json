@@ -1,0 +1,21 @@
+{
+  "app_name": "Midnight",
+  "package_name": "com.mintfeed.app",
+  "short_description": "Crypto & AI news + bets",
+  "long_description": "Midnight is a mobile app for crypto-native traders and curious tech enthusiasts who want to stay informed in 60 seconds. Swipe through AI-summarized headlines from the top crypto and AI news sources, watch the market in real time, and bet on prediction markets — all in one dark, typographic interface built for Seeker. Features: vertical swipe feed with Gemini-written 60-word summaries, live top-20 crypto prices, Jupiter-powered prediction markets with one-tap bets and claims, Mobile Wallet Adapter for Phantom/Solflare/Backpack, optional Seeker Genesis Token badge for device holders, and push notifications for breaking news and position settlements.",
+  "categories": {
+    "primary": "News",
+    "secondary": "Finance"
+  },
+  "website_url": "https://midnightapp.link",
+  "support_email": "support@midnightapp.link",
+  "privacy_policy_url": "https://midnightapp.link/privacy",
+  "age_rating": "17+",
+  "assets": {
+    "icon": "./icon.png",
+    "banner": "./banner.png",
+    "screenshots_dir": "./screenshots/",
+    "preview_video": "./preview.mp4"
+  },
+  "_notes": "This file is a scaffold. Before submitting, replace placeholder text with final product copy (legal + marketing review), drop real assets into this directory at the paths above, and fill in categories/age rating from the publish.solanamobile.com dashboard questionnaire."
+}
