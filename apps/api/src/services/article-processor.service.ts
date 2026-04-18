@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { prisma } from "@mintfeed/db";
+import { prisma } from "@midnight/db";
 import { fetchAllFeeds, type ParsedFeedItem } from "./rss-fetcher.service";
 import { fetchAllTwitterFeeds } from "./twitter-fetcher.service";
 import { enrichContent } from "./article-fetcher.service";
@@ -7,7 +7,7 @@ import { rewriteArticle } from "./gemini.service";
 import { generateBlurhash } from "./image.service";
 import { matchMarketForArticle } from "./jupiter-prediction.service";
 import { broadcastNotification } from "./notification.service";
-import { ARTICLE_SUMMARY_WORD_LIMIT } from "@mintfeed/shared";
+import { ARTICLE_SUMMARY_WORD_LIMIT } from "@midnight/shared";
 
 function truncateToWordLimit(text: string, limit: number = ARTICLE_SUMMARY_WORD_LIMIT): string {
   const words = text.split(/\s+/);

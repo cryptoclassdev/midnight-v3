@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchMarket, fetchOrderbook } from "@/lib/prediction-client";
-import type { PredictionMarketDetail, OrderbookData } from "@mintfeed/shared";
+import type { PredictionMarketDetail, OrderbookData } from "@midnight/shared";
 
 const MARKET_REFETCH_INTERVAL_MS = 15_000;
 const ORDERBOOK_REFETCH_INTERVAL_MS = 10_000;

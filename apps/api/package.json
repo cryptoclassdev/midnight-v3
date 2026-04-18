@@ -1,5 +1,5 @@
 {
-  "name": "@mintfeed/api",
+  "name": "@midnight/api",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -14,8 +14,8 @@
     "@extractus/article-extractor": "^8.0.20",
     "@google/generative-ai": "^0.21.0",
     "@hono/node-server": "^1.13.0",
-    "@mintfeed/db": "workspace:*",
-    "@mintfeed/shared": "workspace:*",
+    "@midnight/db": "workspace:*",
+    "@midnight/shared": "workspace:*",
     "@onsol/tldparser": "^1.2.1",
     "@prisma/client": "^6.2.0",
     "@solana/web3.js": "^1.98.4",

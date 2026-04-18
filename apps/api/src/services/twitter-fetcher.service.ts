@@ -1,6 +1,6 @@
 import ky from "ky";
-import { prisma } from "@mintfeed/db";
-import type { Category, TwitterSourceTier } from "@mintfeed/db";
+import { prisma } from "@midnight/db";
+import type { Category, TwitterSourceTier } from "@midnight/db";
 import type { ParsedFeedItem } from "./rss-fetcher.service";
 import { extractOgImage } from "./og-image.service";
 

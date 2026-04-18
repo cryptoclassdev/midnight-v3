@@ -18,7 +18,7 @@ import { usePredictionPositions } from "@/hooks/usePredictionPositions";
 import { usePredictionOrders } from "@/hooks/usePredictionOrders";
 import { PositionCard } from "@/components/predict/PositionCard";
 import { OrderRow } from "@/components/predict/OrderRow";
-import { getPortfolioSummary } from "@mintfeed/shared";
+import { getPortfolioSummary } from "@midnight/shared";
 
 export default function ProfileView() {
   const theme = useAppStore((s) => s.theme);

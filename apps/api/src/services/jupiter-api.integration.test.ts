@@ -16,7 +16,7 @@ import {
   ClosePositionSchema,
   ClaimPositionSchema,
   USDC_MINT,
-} from "@mintfeed/shared";
+} from "@midnight/shared";
 
 const API_URL =
   process.env.STAGING_API_URL ?? "https://mintfeed-api-staging.up.railway.app";

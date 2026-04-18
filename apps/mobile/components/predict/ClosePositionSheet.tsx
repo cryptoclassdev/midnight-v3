@@ -20,7 +20,7 @@ import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import * as haptics from "@/lib/haptics";
-import type { PredictionPosition } from "@mintfeed/shared";
+import type { PredictionPosition } from "@midnight/shared";
 
 type ProgressState = "idle" | "signing" | "broadcasting" | "confirming";
 

@@ -1,5 +1,5 @@
 {
-  "name": "mintfeed-v3",
+  "name": "midnight-v3",
   "private": true,
   "scripts": {
     "dev": "turbo dev",

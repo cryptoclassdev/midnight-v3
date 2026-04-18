@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import Expo from "expo-server-sdk";
-import { prisma } from "@mintfeed/db";
+import { prisma } from "@midnight/db";
 
 const expo = new Expo();
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
@@ -211,7 +211,7 @@ notificationRoutes.post("/notifications/test", async (c) => {
       .map((d) => ({
         to: d.expoPushToken,
         sound: "default" as const,
-        title: "MintFeed Test",
+        title: "Midnight Test",
         body: "If you see this, push notifications are working!",
         data: { screen: "market" },
       }));

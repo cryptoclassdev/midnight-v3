@@ -1,6 +1,6 @@
 import ky from "ky";
-import { prisma } from "@mintfeed/db";
-import { TOP_COINS_COUNT } from "@mintfeed/shared";
+import { prisma } from "@midnight/db";
+import { TOP_COINS_COUNT } from "@midnight/shared";
 import { broadcastNotification } from "./notification.service";
 
 const COINGECKO_API_URL =

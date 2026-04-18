@@ -11,7 +11,7 @@ import type {
   PredictionOrder,
   PredictionPosition,
   JupiterPaginatedResponse,
-} from "@mintfeed/shared";
+} from "@midnight/shared";
 
 const BASE = "api/v1/predictions";
 

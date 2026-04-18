@@ -3,7 +3,7 @@ import {
   parseTradeAmount,
   formatResolutionCountdown,
   MINIMUM_TRADE_USD,
-} from "@mintfeed/shared";
+} from "@midnight/shared";
 import {
   buildResolutionRulePreview,
   formatResolveDateTime,

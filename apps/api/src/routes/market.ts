@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { prisma } from "@mintfeed/db";
+import { prisma } from "@midnight/db";
 
 export const marketRoutes = new Hono();
 

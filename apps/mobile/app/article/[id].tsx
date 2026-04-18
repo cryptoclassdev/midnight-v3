@@ -16,7 +16,7 @@ import { api } from "@/lib/api-client";
 import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize, lineHeight, letterSpacing } from "@/constants/typography";
-import type { Article, PaginatedResponse } from "@mintfeed/shared";
+import type { Article, PaginatedResponse } from "@midnight/shared";
 
 function findArticleInFeedCache(
   queryClient: ReturnType<typeof useQueryClient>,

@@ -31,10 +31,10 @@ COPY packages/db/src/ ./packages/db/src/
 COPY packages/shared/ ./packages/shared/
 
 # Generate Prisma client
-RUN pnpm --filter @mintfeed/db db:generate
+RUN pnpm --filter @midnight/db db:generate
 
 # Build the API
-RUN pnpm --filter @mintfeed/api build
+RUN pnpm --filter @midnight/api build
 
 ENV NODE_ENV=production
 EXPOSE 3000

@@ -28,7 +28,7 @@ import {
   formatResolutionCountdown,
   computeLiquiditySpread,
   MINIMUM_TRADE_USD,
-} from "@mintfeed/shared";
+} from "@midnight/shared";
 import { showToast } from "@/lib/toast";
 import * as haptics from "@/lib/haptics";
 import { buildResolutionRulePreview, formatResolveDateTime } from "./utils";

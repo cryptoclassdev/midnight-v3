@@ -1,5 +1,5 @@
 import Expo, { type ExpoPushMessage, type ExpoPushTicket } from "expo-server-sdk";
-import { prisma, NotificationType } from "@mintfeed/db";
+import { prisma, NotificationType } from "@midnight/db";
 
 const expo = new Expo();
 

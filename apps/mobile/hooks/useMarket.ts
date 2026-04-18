@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
-import type { MarketCoin } from "@mintfeed/shared";
+import type { MarketCoin } from "@midnight/shared";
 
 export function useMarket() {
   return useQuery({

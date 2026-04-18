@@ -1,6 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
 import { withSolanaConnectionFallbacks } from "@/lib/solana";
-import { USDC_MINT } from "@mintfeed/shared";
+import { USDC_MINT } from "@midnight/shared";
 
 export interface WalletBalances {
   solLamports: number;

@@ -1,10 +1,10 @@
 import { Hono } from "hono";
-import { prisma, Category } from "@mintfeed/db";
+import { prisma, Category } from "@midnight/db";
 import {
   DEFAULT_PAGE_SIZE,
   dedupeArticlesByContent,
   isBinaryMarket,
-} from "@mintfeed/shared";
+} from "@midnight/shared";
 
 export const feedRoutes = new Hono();
 

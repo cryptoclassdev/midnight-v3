@@ -12,15 +12,15 @@ import { showToast } from "@/lib/toast";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import { useClosePosition, useClaimPosition } from "@/hooks/usePredictionTrading";
-import { microToUsd } from "@mintfeed/shared";
+import { microToUsd } from "@midnight/shared";
 import {
   getPositionValue,
   getPositionPnl,
   getPositionPnlPercent,
   getPositionAvgPrice,
   getPositionFees,
-} from "@mintfeed/shared";
-import type { PredictionPosition } from "@mintfeed/shared";
+} from "@midnight/shared";
+import type { PredictionPosition } from "@midnight/shared";
 import { ClosePositionSheet } from "./ClosePositionSheet";
 
 type ProgressState = "idle" | "signing" | "broadcasting" | "confirming";

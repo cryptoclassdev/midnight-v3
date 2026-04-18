@@ -16,7 +16,7 @@ import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import { SwipeBetCard } from "./SwipeBetCard";
 import { getNewsCardBottomPadding } from "./news-card-layout";
-import type { Article } from "@mintfeed/shared";
+import type { Article } from "@midnight/shared";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 

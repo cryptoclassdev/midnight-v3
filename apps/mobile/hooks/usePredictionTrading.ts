@@ -21,7 +21,7 @@ import type {
   CreateOrderResponse,
   ClaimPositionResponse,
   TradingStatus,
-} from "@mintfeed/shared";
+} from "@midnight/shared";
 import type { VersionedTransaction } from "@solana/web3.js";
 
 const TRADING_STATUS_REFETCH_INTERVAL_MS = 30_000;

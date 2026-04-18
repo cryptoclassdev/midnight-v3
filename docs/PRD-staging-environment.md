@@ -138,7 +138,7 @@ railway variables set SOLANA_RPC_URL="<same RPC>"
 **Actions (Railway Dashboard):**
 1. Switch to the **staging** environment (dropdown)
 2. Click **mintfeed-api** service → **Settings**
-3. Under **Source** → Connect repo `cryptoclassdev/mintfeed-v3`
+3. Under **Source** → Connect repo `cryptoclassdev/midnight-v3`
 4. Set **Branch** to `stage`
 5. Ensure the **Dockerfile** builder is selected (should auto-detect)
 

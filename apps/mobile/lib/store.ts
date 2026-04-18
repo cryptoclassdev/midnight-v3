@@ -77,7 +77,7 @@ export const useAppStore = create<AppState>()(
       setPendingArticleId: (id) => set({ pendingArticleId: id }),
     }),
     {
-      name: "mintfeed-app-store",
+      name: "midnight-app-store",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         theme: state.theme,

@@ -9,7 +9,7 @@ import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import { FearGreedCard } from "@/components/market/FearGreedCard";
 import { Ionicons } from "@expo/vector-icons";
-import type { MarketCoin } from "@mintfeed/shared";
+import type { MarketCoin } from "@midnight/shared";
 
 const priceFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",

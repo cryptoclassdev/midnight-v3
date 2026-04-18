@@ -1,6 +1,6 @@
 import Parser from "rss-parser";
-import { prisma } from "@mintfeed/db";
-import type { Category } from "@mintfeed/db";
+import { prisma } from "@midnight/db";
+import type { Category } from "@midnight/db";
 
 const parser = new Parser<unknown, { contentEncoded?: string }>({
   timeout: 10_000,

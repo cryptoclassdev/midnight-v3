@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { useAppStore, QUICK_BET_MIN } from "@/lib/store";
 import { useCreateOrder } from "@/hooks/usePredictionTrading";
-import { usdToMicro, USDC_MINT } from "@mintfeed/shared";
+import { usdToMicro, USDC_MINT } from "@midnight/shared";
 import { showToast, updateToast } from "@/lib/toast";
 import * as haptics from "@/lib/haptics";
 
