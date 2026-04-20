@@ -89,6 +89,21 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 
+      - name: Diagnose keystore
+        run: |
+          echo "Keystore MD5: $(md5sum android/app/release.keystore | awk '{print $1}')"
+          echo "Keystore size: $(stat -c%s android/app/release.keystore) bytes"
+          echo "Store password length: ${#KS_PASS}"
+          echo "Key password length:   ${#KEY_PASS}"
+          echo "Alias: '$ALIAS'"
+          echo "--- keytool verify with CI env vars ---"
+          keytool -list -keystore android/app/release.keystore -storepass "$KS_PASS" -alias "$ALIAS" && echo "keytool list OK"
+          keytool -certreq -keystore android/app/release.keystore -storepass "$KS_PASS" -alias "$ALIAS" -keypass "$KEY_PASS" -file /tmp/test.csr 2>&1 && echo "keytool certreq (key password verified) OK" || echo "keytool certreq FAILED"
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+
       - name: Build signed APK
         run: |
           cd android
