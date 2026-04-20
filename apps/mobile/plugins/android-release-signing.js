@@ -1,40 +1,37 @@
 const { withAppBuildGradle } = require("expo/config-plugins");
 
 /**
- * Adds a `release` signingConfigs entry to android/app/build.gradle and wires
- * the release buildType to use it. Values are read from env vars at Gradle time:
+ * The Expo template already includes a release signingConfig that reads
+ * ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and ANDROID_KEY_PASSWORD
+ * from env. This plugin wraps those System.getenv() calls in .trim() so
+ * stray trailing whitespace or newlines in GitHub Secrets cannot corrupt
+ * the password bytes passed to the Java keystore decrypter.
  *
- *   ANDROID_KEYSTORE_PASSWORD — storePassword
- *   ANDROID_KEY_ALIAS         — keyAlias
- *   ANDROID_KEY_PASSWORD      — keyPassword
- *
- * Keystore file is expected at android/app/release.keystore (decoded from the
- * ANDROID_KEYSTORE_BASE64 GitHub secret by the CI workflow before assembleRelease).
+ * Also sets storeType 'PKCS12' explicitly to match the keystore format.
  */
 function withAndroidReleaseSigning(config) {
   return withAppBuildGradle(config, (cfg) => {
     let gradle = cfg.modResults.contents;
 
-    if (gradle.includes("signingConfigs.release ")) return cfg;
-
-    const releaseSigning = `
-        release {
-            storeFile file('release.keystore')
-            storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD') ?: ''
-            keyAlias System.getenv('ANDROID_KEY_ALIAS') ?: ''
-            keyPassword System.getenv('ANDROID_KEY_PASSWORD') ?: ''
-            storeType 'PKCS12'
-        }`;
-
     gradle = gradle.replace(
-      /(signingConfigs\s*\{\s*debug\s*\{[^}]+\})\s*\}/,
-      `$1${releaseSigning}\n    }`,
+      /storePassword System\.getenv\('ANDROID_KEYSTORE_PASSWORD'\)\s*\?:\s*''/,
+      "storePassword (System.getenv('ANDROID_KEYSTORE_PASSWORD') ?: '').trim()",
+    );
+    gradle = gradle.replace(
+      /keyAlias System\.getenv\('ANDROID_KEY_ALIAS'\)\s*\?:\s*''/,
+      "keyAlias (System.getenv('ANDROID_KEY_ALIAS') ?: '').trim()",
+    );
+    gradle = gradle.replace(
+      /keyPassword System\.getenv\('ANDROID_KEY_PASSWORD'\)\s*\?:\s*''/,
+      "keyPassword (System.getenv('ANDROID_KEY_PASSWORD') ?: '').trim()",
     );
 
-    gradle = gradle.replace(
-      /(buildTypes\s*\{[\s\S]*?release\s*\{[\s\S]*?)signingConfig\s+signingConfigs\.debug/,
-      "$1signingConfig signingConfigs.release",
-    );
+    if (!gradle.includes("storeType 'PKCS12'")) {
+      gradle = gradle.replace(
+        /(keyPassword \(System\.getenv\('ANDROID_KEY_PASSWORD'\)[^\n]+\n)/,
+        "$1            storeType 'PKCS12'\n",
+      );
+    }
 
     cfg.modResults.contents = gradle;
     return cfg;
