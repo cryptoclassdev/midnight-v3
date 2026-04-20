@@ -22,7 +22,9 @@ import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import * as haptics from "@/lib/haptics";
 import type { PredictionPosition } from "@midnight/shared";
 
-type ProgressState = "idle" | "signing" | "broadcasting" | "confirming";
+type ProgressState = "idle" | "preparing" | "signing" | "broadcasting" | "confirming";
+
+const SLOW_SIGNING_HINT_MS = 10_000;
 
 interface ClosePositionSheetProps {
   visible: boolean;
@@ -67,6 +69,7 @@ export function ClosePositionSheet({
 
   const isProfitable = pnl >= 0;
   const isProcessing = progressState !== "idle";
+  const [showSlowHint, setShowSlowHint] = React.useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -79,8 +82,19 @@ export function ClosePositionSheet({
     }
   }, [visible, overlayOpacity, translateY, screenHeight]);
 
+  useEffect(() => {
+    if (!isProcessing) {
+      setShowSlowHint(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowSlowHint(true), SLOW_SIGNING_HINT_MS);
+    return () => clearTimeout(timer);
+  }, [isProcessing]);
+
+  // Always dismissable — a user trapped on "signing" can't reach the wallet
+  // if MWA never sent them there. We can't abort a broadcast transaction,
+  // but we can release the UI.
   const handleDismiss = () => {
-    if (isProcessing) return;
     overlayOpacity.value = withTiming(0, { duration: 250, easing: EASING_OUT });
     translateY.value = withTiming(screenHeight, { duration: 250, easing: EASING_OUT }, () => {
       runOnJS(onDismiss)();
@@ -110,7 +124,7 @@ export function ClosePositionSheet({
     >
       {/* Overlay */}
       <Animated.View style={[styles.overlay, overlayStyle]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleDismiss} disabled={isProcessing} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleDismiss} />
       </Animated.View>
 
       {/* Sheet */}
@@ -137,7 +151,6 @@ export function ClosePositionSheet({
           <Pressable
             onPress={handleDismiss}
             hitSlop={12}
-            disabled={isProcessing}
             accessibilityRole="button"
             accessibilityLabel="Close sheet"
           >
@@ -241,13 +254,33 @@ export function ClosePositionSheet({
 
         {/* Progress state */}
         {isProcessing && (
-          <View style={styles.progressRow}>
-            <ActivityIndicator size="small" color={themeColors.accent} />
-            <Text style={[styles.progressText, { color: themeColors.textMuted }]}>
-              {progressState === "signing" && "Signing transaction..."}
-              {progressState === "broadcasting" && "Broadcasting..."}
-              {progressState === "confirming" && "Confirming..."}
-            </Text>
+          <View style={styles.progressBlock}>
+            <View style={styles.progressRow}>
+              <ActivityIndicator size="small" color={themeColors.accent} />
+              <Text style={[styles.progressText, { color: themeColors.textMuted }]}>
+                {progressState === "preparing" && "Preparing transaction..."}
+                {progressState === "signing" && "Signing transaction..."}
+                {progressState === "broadcasting" && "Broadcasting..."}
+                {progressState === "confirming" && "Confirming..."}
+              </Text>
+            </View>
+            {showSlowHint && (
+              <View style={styles.slowHintRow}>
+                <Text style={[styles.slowHintText, { color: themeColors.textMuted }]}>
+                  Taking too long? You can cancel and retry.
+                </Text>
+                <Pressable
+                  onPress={handleDismiss}
+                  style={[styles.cancelChip, { borderColor: themeColors.border }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel and dismiss"
+                >
+                  <Text style={[styles.cancelChipText, { color: themeColors.textSecondary }]}>
+                    CANCEL
+                  </Text>
+                </Pressable>
+              </View>
+            )}
           </View>
         )}
 
@@ -390,15 +423,41 @@ const styles = StyleSheet.create({
     fontFamily: fonts.mono.bold,
     fontSize: fontSize.sm,
   },
+  progressBlock: {
+    gap: 10,
+    paddingVertical: 4,
+  },
   progressRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingVertical: 4,
   },
   progressText: {
     fontFamily: fonts.mono.regular,
     fontSize: fontSize.xs,
+    letterSpacing: letterSpacing.wide,
+  },
+  slowHintRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  slowHintText: {
+    flex: 1,
+    fontFamily: fonts.body.regular,
+    fontSize: fontSize.xs,
+    lineHeight: 16,
+  },
+  cancelChip: {
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderCurve: "continuous",
+  },
+  cancelChipText: {
+    fontFamily: fonts.mono.bold,
+    fontSize: 9,
     letterSpacing: letterSpacing.wide,
   },
   errorRow: {

@@ -206,7 +206,10 @@ export default function ProfileView() {
           </View>
         )}
 
-        {positionsLoading && (
+        {/* Only show the spinner when there's nothing to render yet. With the
+            prefetch on wallet connect + placeholderData in the hook, subsequent
+            visits paint from cache and background-refetch silently. */}
+        {positionsLoading && !positionsData && (
           <View style={styles.loadingRow}>
             <ActivityIndicator size="small" color={themeColors.accent} />
           </View>
@@ -279,14 +282,14 @@ export default function ProfileView() {
 
         {showHistory && (
           <>
-            {(ordersLoading || positionsLoading) && (
+            {(ordersLoading && !ordersData) || (positionsLoading && !positionsData) ? (
               <View style={styles.loadingRow}>
                 <ActivityIndicator
                   size="small"
                   color={themeColors.accent}
                 />
               </View>
-            )}
+            ) : null}
 
             {!ordersLoading && !positionsLoading && !hasHistory && (
               <View

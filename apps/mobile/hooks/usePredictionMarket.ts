@@ -5,12 +5,16 @@ import type { PredictionMarketDetail, OrderbookData } from "@midnight/shared";
 const MARKET_REFETCH_INTERVAL_MS = 15_000;
 const ORDERBOOK_REFETCH_INTERVAL_MS = 10_000;
 
-export function usePredictionMarketDetail(marketId: string | undefined) {
+export function usePredictionMarketDetail(
+  marketId: string | undefined,
+  options?: { initialData?: PredictionMarketDetail },
+) {
   return useQuery<PredictionMarketDetail>({
     queryKey: ["prediction-market", marketId],
     queryFn: () => fetchMarket(marketId!),
     enabled: !!marketId,
     refetchInterval: MARKET_REFETCH_INTERVAL_MS,
+    placeholderData: (prev) => prev ?? options?.initialData,
   });
 }
 

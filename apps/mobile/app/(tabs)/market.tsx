@@ -9,7 +9,14 @@ import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import { FearGreedCard } from "@/components/market/FearGreedCard";
 import { Ionicons } from "@expo/vector-icons";
+import { fuzzyMatchScore } from "@/lib/fuzzy";
 import type { MarketCoin } from "@midnight/shared";
+
+// 1×1 transparent PNG — used as the image placeholder so FlashList row
+// recycling can't show a stale bitmap from a previous token while the new
+// URL loads.
+const TRANSPARENT_PIXEL =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
 const priceFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -71,6 +78,9 @@ const CoinRow = memo(function CoinRow({
       {item.imageUrl ? (
         <Image
           source={{ uri: item.imageUrl }}
+          recyclingKey={item.id}
+          placeholder={TRANSPARENT_PIXEL}
+          placeholderContentFit="cover"
           style={styles.coinIcon}
           accessibilityLabel={`${item.name} icon`}
         />
@@ -138,13 +148,31 @@ export default function MarketScreen() {
   }, [data?.data]);
 
   const filteredCoins = useMemo(() => {
-    if (!searchQuery.trim()) return rankedCoins;
-    const query = searchQuery.toLowerCase();
-    return rankedCoins.filter(
-      (coin) =>
-        coin.name.toLowerCase().includes(query) ||
-        coin.symbol.toLowerCase().includes(query),
-    );
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return rankedCoins;
+
+    // Score each coin by the best fuzzy match across symbol + name. Symbol
+    // match wins over name match at the same score level. Negative score
+    // means the coin is filtered out.
+    const scored: Array<{ coin: RankedCoin; score: number }> = [];
+    for (const coin of rankedCoins) {
+      const symbolScore = fuzzyMatchScore(query, coin.symbol.toLowerCase(), 1);
+      const nameScore = fuzzyMatchScore(query, coin.name.toLowerCase(), 2);
+
+      const candidates = [symbolScore, nameScore].filter((s) => s >= 0);
+      if (candidates.length === 0) continue;
+
+      const best = Math.min(...candidates);
+      // Prefer symbol matches over name matches at the same tier.
+      const tieBreak = symbolScore >= 0 ? 0 : 0.5;
+      scored.push({ coin, score: best + tieBreak });
+    }
+
+    scored.sort((a, b) => {
+      if (a.score !== b.score) return a.score - b.score;
+      return a.coin.rank - b.coin.rank;
+    });
+    return scored.map(({ coin }) => coin);
   }, [rankedCoins, searchQuery]);
 
   const renderItem = useCallback(

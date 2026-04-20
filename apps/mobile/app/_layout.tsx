@@ -2,8 +2,14 @@ import { useEffect } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { focusManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MobileWalletProvider } from "@wallet-ui/react-native-web3js";
+import {
+  focusManager,
+  QueryClient,
+  QueryClientProvider,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { MobileWalletProvider, useMobileWallet } from "@wallet-ui/react-native-web3js";
+import { fetchPositions, fetchOrders } from "@/lib/prediction-client";
 import * as Sentry from "@sentry/react-native";
 import { Anton_400Regular } from "@expo-google-fonts/anton";
 import {
@@ -38,6 +44,35 @@ Sentry.init({
 
 function NotificationBootstrap() {
   useNotifications();
+  return null;
+}
+
+const WALLET_DATA_STALE_TIME_MS = 30_000;
+
+/**
+ * Warms the prediction-positions and prediction-orders query caches as soon
+ * as a wallet is available, so opening the profile screen paints instantly
+ * from cache instead of showing a spinner on every cold visit.
+ */
+function WalletDataPrefetch() {
+  const { account } = useMobileWallet();
+  const queryClient = useQueryClient();
+  const address = account?.address.toString() ?? null;
+
+  useEffect(() => {
+    if (!address) return;
+    queryClient.prefetchQuery({
+      queryKey: ["prediction-positions", address],
+      queryFn: () => fetchPositions(address),
+      staleTime: WALLET_DATA_STALE_TIME_MS,
+    });
+    queryClient.prefetchQuery({
+      queryKey: ["prediction-orders", address],
+      queryFn: () => fetchOrders(address),
+      staleTime: WALLET_DATA_STALE_TIME_MS,
+    });
+  }, [address, queryClient]);
+
   return null;
 }
 
@@ -100,6 +135,7 @@ function RootLayout() {
           >
             <StatusBar style={theme === "dark" ? "light" : "dark"} />
             <NotificationBootstrap />
+            <WalletDataPrefetch />
             <OnboardingFlow />
           </MobileWalletProvider>
         </QueryClientProvider>
@@ -118,6 +154,7 @@ function RootLayout() {
           >
             <StatusBar style={theme === "dark" ? "light" : "dark"} />
             <NotificationBootstrap />
+            <WalletDataPrefetch />
             <Stack
               screenOptions={{
                 headerShown: false,

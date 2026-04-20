@@ -12,6 +12,7 @@ import {
   isWalletError,
   isTransactionExpired,
   signPredictionTransaction,
+  withTimeout,
   type TransactionMeta,
 } from "@/lib/wallet";
 import { fetchWalletBalances, getBalanceError } from "@/lib/balance";
@@ -25,6 +26,7 @@ import type {
 import type { VersionedTransaction } from "@solana/web3.js";
 
 const TRADING_STATUS_REFETCH_INTERVAL_MS = 30_000;
+const CLOSE_POSITION_TIMEOUT_MS = 60_000;
 
 type SignFn = (tx: VersionedTransaction) => Promise<VersionedTransaction>;
 
@@ -89,13 +91,19 @@ export function useCreateOrder() {
 
       if (__DEV__) console.log("[createOrder] Request:", JSON.stringify(request));
 
-      // Pre-flight balance check for buy orders
+      // Pre-flight balance check for buy orders — invalidate the cached
+      // balance first so a stale "insufficient" result can't block a user
+      // who just deposited funds.
       if (request.isBuy && request.depositAmount) {
+        queryClient.invalidateQueries({ queryKey: ["wallet-balance", walletAddress] });
         try {
           const balances = await fetchWalletBalances(walletAddress);
+          queryClient.setQueryData(["wallet-balance", walletAddress], balances);
           const balanceError = getBalanceError(balances, Number(request.depositAmount));
           if (balanceError) {
-            throw new Error(balanceError);
+            const error = new Error(balanceError);
+            (error as any).retryable = true;
+            throw error;
           }
         } catch (err) {
           if (err instanceof Error && err.message.startsWith("Insufficient")) {
@@ -179,24 +187,36 @@ export function useCreateOrder() {
   });
 }
 
+export interface ClosePositionVariables {
+  positionPubkey: string;
+  ownerPubkey: string;
+  isYes: boolean;
+  contracts: string;
+  /**
+   * Fires right before the wallet signing prompt is expected. Callers use
+   * this to flip UI from "preparing" to "signing" only after the network
+   * round-trip has resolved — so a slow API response doesn't leave users
+   * stuck on "Signing..." while nothing has been sent to the wallet yet.
+   */
+  onBeforeSign?: () => void;
+}
+
 export function useClosePosition() {
   const queryClient = useQueryClient();
   const { account, signTransactions } = useMobileWallet();
   const walletAddress = account?.address.toString() ?? null;
 
-  return useMutation<
-    RelayResult,
-    Error,
-    { positionPubkey: string; ownerPubkey: string; isYes: boolean; contracts: string }
-  >({
-    mutationFn: async ({ positionPubkey, ownerPubkey, isYes, contracts }) => {
+  return useMutation<RelayResult, Error, ClosePositionVariables>({
+    mutationFn: async ({ positionPubkey, ownerPubkey, isYes, contracts, onBeforeSign }) => {
       if (!walletAddress) {
         throw new Error("Wallet not connected");
       }
 
       // SOL pre-check (closing needs fees)
+      queryClient.invalidateQueries({ queryKey: ["wallet-balance", walletAddress] });
       try {
         const balances = await fetchWalletBalances(walletAddress);
+        queryClient.setQueryData(["wallet-balance", walletAddress], balances);
         if (balances.solLamports < 30_000_000) {
           throw new Error("Insufficient SOL for transaction fees. You need ~0.03 SOL.");
         }
@@ -214,11 +234,18 @@ export function useClosePosition() {
         throw new Error(body?.error ?? body?.message ?? httpErr?.message ?? "Failed to close position");
       }
 
+      // API is done — from here on we are waiting on the wallet + relay.
+      onBeforeSign?.();
+
       try {
-        return await signAndRelay(
-          (tx) => signTransactions(tx),
-          response.transaction,
-          response.txMeta,
+        return await withTimeout(
+          signAndRelay(
+            (tx) => signTransactions(tx),
+            response.transaction,
+            response.txMeta,
+          ),
+          CLOSE_POSITION_TIMEOUT_MS,
+          "Close position",
         );
       } catch (error) {
         if (isWalletError(error)) {
@@ -226,6 +253,13 @@ export function useClosePosition() {
         }
         if (isTransactionExpired(error)) {
           const err = new Error("Transaction expired. Please try again.");
+          (err as any).retryable = true;
+          throw err;
+        }
+        if (error instanceof Error && /timed out/i.test(error.message)) {
+          const err = new Error(
+            "Wallet did not respond in time. Please try again.",
+          );
           (err as any).retryable = true;
           throw err;
         }

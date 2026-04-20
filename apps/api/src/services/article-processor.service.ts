@@ -9,10 +9,51 @@ import { matchMarketForArticle } from "./jupiter-prediction.service";
 import { broadcastNotification } from "./notification.service";
 import { ARTICLE_SUMMARY_WORD_LIMIT } from "@midnight/shared";
 
+const SENTENCE_TERMINATOR_REGEX = /[.!?](?:["'\u2019\u201D)]|$|\s)/g;
+
+function countWords(text: string): number {
+  const matches = text.match(/\S+/g);
+  return matches ? matches.length : 0;
+}
+
+/**
+ * Truncate to `limit` words while preserving \n\n paragraph breaks.
+ * When cutting, backtrack to the last sentence-ending boundary so the result
+ * never ends mid-clause. If no boundary exists in the first `limit` words,
+ * falls back to hard word-cap.
+ */
 function truncateToWordLimit(text: string, limit: number = ARTICLE_SUMMARY_WORD_LIMIT): string {
-  const words = text.split(/\s+/);
-  if (words.length <= limit) return text;
-  return words.slice(0, limit).join(" ");
+  if (!text) return "";
+  if (countWords(text) <= limit) return text;
+
+  // Walk the string by whitespace-delimited tokens, preserving original spacing
+  // (including newlines) so \n\n paragraph breaks survive.
+  let wordCount = 0;
+  let cutIndex = text.length;
+  const tokenRegex = /\S+/g;
+  let match: RegExpExecArray | null;
+  while ((match = tokenRegex.exec(text)) !== null) {
+    wordCount++;
+    if (wordCount === limit) {
+      cutIndex = match.index + match[0].length;
+      break;
+    }
+  }
+
+  const head = text.slice(0, cutIndex);
+
+  // Backtrack to last sentence terminator within `head`
+  let lastTerminator = -1;
+  let termMatch: RegExpExecArray | null;
+  SENTENCE_TERMINATOR_REGEX.lastIndex = 0;
+  while ((termMatch = SENTENCE_TERMINATOR_REGEX.exec(head)) !== null) {
+    lastTerminator = termMatch.index + 1; // include the terminator char
+  }
+
+  if (lastTerminator > 0) {
+    return head.slice(0, lastTerminator).trimEnd();
+  }
+  return head.trimEnd();
 }
 
 function normalizeUrl(url: string): string {
