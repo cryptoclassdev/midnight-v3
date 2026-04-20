@@ -37,28 +37,46 @@ export const predictionRoutes = new Hono();
 
 // --- Markets ---
 
+const EVENT_VOLUME_TTL_MS = 60_000;
+const eventVolumeCache = new Map<string, { value: number; expiresAt: number }>();
+
+async function fetchEventVolume(eventId: string): Promise<number | null> {
+  const cached = eventVolumeCache.get(eventId);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  try {
+    const event = await jupiter.get(`events/${eventId}`).json<any>();
+    const volume = event?.volumeUsd ? Number(event.volumeUsd) : 0;
+    eventVolumeCache.set(eventId, { value: volume, expiresAt: Date.now() + EVENT_VOLUME_TTL_MS });
+    return volume;
+  } catch {
+    return null;
+  }
+}
+
 predictionRoutes.get("/predictions/markets/:marketId", async (c) => {
   const { marketId } = c.req.param();
   try {
-    const data = await jupiter.get(`markets/${marketId}`).json<any>();
+    // Fetch market and DB record in parallel — the DB record only feeds the
+    // event-volume fallback, so overlapping it with the Jupiter round-trip
+    // hides the extra latency.
+    const [data, dbMarket] = await Promise.all([
+      jupiter.get(`markets/${marketId}`).json<any>(),
+      prisma.predictionMarket.findUnique({
+        where: { id: marketId },
+        select: { eventId: true },
+      }).catch(() => null),
+    ]);
+
     // Reject non-binary markets
     if (!data?.pricing || data.pricing.buyYesPriceUsd <= 0 || data.pricing.buyNoPriceUsd <= 0) {
       return c.json({ error: "Market is not a binary Yes/No market" }, 404);
     }
 
-    // Fall back to event-level volume when market pricing reports 0
-    if (!data.pricing.volume || data.pricing.volume === 0) {
-      const dbMarket = await prisma.predictionMarket.findUnique({
-        where: { id: marketId },
-        select: { eventId: true },
-      });
-      if (dbMarket?.eventId) {
-        try {
-          const event = await jupiter.get(`events/${dbMarket.eventId}`).json<any>();
-          if (event?.volumeUsd) {
-            data.pricing.volume = Number(event.volumeUsd);
-          }
-        } catch { /* keep 0 */ }
+    // Fall back to cached event-level volume when market pricing reports 0
+    if ((!data.pricing.volume || data.pricing.volume === 0) && dbMarket?.eventId) {
+      const eventVolume = await fetchEventVolume(dbMarket.eventId);
+      if (eventVolume && eventVolume > 0) {
+        data.pricing.volume = eventVolume;
       }
     }
 

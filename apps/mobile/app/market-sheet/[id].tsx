@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
@@ -42,6 +43,7 @@ const STATUS_COLORS = {
 export default function MarketSheet() {
   const { id: marketId, question } = useLocalSearchParams<{ id: string; question?: string }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const theme = useAppStore((s) => s.theme);
   const { account } = useMobileWallet();
   const walletAddress = account?.address.toString() ?? null;
@@ -108,6 +110,12 @@ export default function MarketSheet() {
       return;
     }
 
+    // Force a balance refresh before placing the bet so stale "insufficient"
+    // state can't block the mutation when the user has actually deposited.
+    await queryClient.invalidateQueries({
+      queryKey: ["wallet-balance", walletAddress],
+    });
+
     const usd = parseTradeAmount(amount)!;
     try {
       await createOrder.mutateAsync({
@@ -126,7 +134,7 @@ export default function MarketSheet() {
       const message = err instanceof Error ? err.message : String(err);
       showToast("error", "Trade Failed", message);
     }
-  }, [walletAddress, marketId, amount, selectedSide, createOrder]);
+  }, [walletAddress, marketId, amount, selectedSide, createOrder, queryClient]);
 
   const isTradingPaused = tradingStatus?.trading_active === false;
   const hasAmountInput = amount.length > 0;
@@ -147,7 +155,10 @@ export default function MarketSheet() {
 
   const isBinary = market && yesPrice > 0 && noPrice > 0;
 
-  if (marketLoading) {
+  // Only show the full-screen spinner when there's no data at all — with the
+  // pre-seeded cache from SwipeBetCard, market is populated instantly and we
+  // paint the sheet while the background refetch resolves.
+  if (marketLoading && !market) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
         <View style={styles.loadingContainer}>

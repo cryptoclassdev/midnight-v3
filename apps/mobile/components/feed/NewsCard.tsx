@@ -75,15 +75,14 @@ const EMOJI_REGEX =
   /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu;
 
 function stripEmoji(text: string): string {
-  return text.replace(EMOJI_REGEX, "").replace(/\s{2,}/g, " ").trim();
+  // Preserve newlines so the server-provided \n\n paragraph break survives —
+  // only collapse runs of horizontal whitespace.
+  return text.replace(EMOJI_REGEX, "").replace(/[ \t]{2,}/g, " ").trim();
 }
 
-const SUMMARY_WORD_LIMIT = 60;
-
-function truncateSummary(text: string): string {
-  const words = text.split(/\s+/);
-  if (words.length <= SUMMARY_WORD_LIMIT) return text;
-  return words.slice(0, SUMMARY_WORD_LIMIT).join(" ") + "...";
+function cleanSummaryText(text: string): string {
+  // Collapse 3+ consecutive newlines to a single paragraph break, trim.
+  return stripEmoji(text).replace(/\n{3,}/g, "\n\n");
 }
 
 function timeAgo(dateString: string): string {
@@ -141,7 +140,7 @@ export const NewsCard = memo(function NewsCard({ article, onSwipeBet, walletConn
   const sentimentColor = getSentimentColor(sentiment, themeColors);
   const categoryColor = getCategoryColor(article.category, themeColors);
   const cleanTitle = stripEmoji(article.title);
-  const cleanSummary = truncateSummary(stripEmoji(article.summary));
+  const cleanSummary = cleanSummaryText(article.summary);
 
   const markets = (article.predictionMarkets ?? [])
     .filter((m, i, arr) => arr.findIndex((x) => x.id === m.id) === i)

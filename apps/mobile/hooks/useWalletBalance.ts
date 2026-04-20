@@ -9,6 +9,6 @@ export function useWalletBalance(walletAddress: string | null) {
     queryFn: () => fetchWalletBalances(walletAddress!),
     enabled: !!walletAddress,
     refetchInterval: BALANCE_REFETCH_INTERVAL_MS,
-    staleTime: 10_000,
+    staleTime: 0,
   });
 }

@@ -3,6 +3,7 @@ import { fetchOrders } from "@/lib/prediction-client";
 import type { JupiterPaginatedResponse, PredictionOrder } from "@midnight/shared";
 
 const ORDERS_REFETCH_INTERVAL_MS = 30_000;
+const ORDERS_STALE_TIME_MS = 30_000;
 
 export function usePredictionOrders(ownerPubkey: string | undefined) {
   return useQuery<JupiterPaginatedResponse<PredictionOrder>>({
@@ -10,5 +11,7 @@ export function usePredictionOrders(ownerPubkey: string | undefined) {
     queryFn: () => fetchOrders(ownerPubkey!),
     enabled: !!ownerPubkey,
     refetchInterval: ORDERS_REFETCH_INTERVAL_MS,
+    staleTime: ORDERS_STALE_TIME_MS,
+    placeholderData: (prev) => prev,
   });
 }

@@ -3,6 +3,7 @@ import { fetchPositions } from "@/lib/prediction-client";
 import type { JupiterPaginatedResponse, PredictionPosition } from "@midnight/shared";
 
 const POSITIONS_REFETCH_INTERVAL_MS = 30_000;
+const POSITIONS_STALE_TIME_MS = 30_000;
 
 export function usePredictionPositions(ownerPubkey: string | undefined) {
   return useQuery<JupiterPaginatedResponse<PredictionPosition>>({
@@ -10,5 +11,7 @@ export function usePredictionPositions(ownerPubkey: string | undefined) {
     queryFn: () => fetchPositions(ownerPubkey!),
     enabled: !!ownerPubkey,
     refetchInterval: POSITIONS_REFETCH_INTERVAL_MS,
+    staleTime: POSITIONS_STALE_TIME_MS,
+    placeholderData: (prev) => prev,
   });
 }

@@ -23,7 +23,7 @@ import {
 import type { PredictionPosition } from "@midnight/shared";
 import { ClosePositionSheet } from "./ClosePositionSheet";
 
-type ProgressState = "idle" | "signing" | "broadcasting" | "confirming";
+type ProgressState = "idle" | "preparing" | "signing" | "broadcasting" | "confirming";
 
 interface PositionCardProps {
   position: PredictionPosition;
@@ -76,13 +76,16 @@ export const PositionCard = memo(function PositionCard({
   const executeClose = useCallback(async () => {
     setActionLoading("close");
     setLastError(null);
-    setProgressState("signing");
+    // Show "preparing" while the API builds the close order — we haven't
+    // asked the wallet to sign yet, so "signing" would be a lie.
+    setProgressState("preparing");
     try {
       await closePos.mutateAsync({
         positionPubkey: position.pubkey,
         ownerPubkey: position.ownerPubkey,
         isYes: position.isYes,
         contracts: position.contracts,
+        onBeforeSign: () => setProgressState("signing"),
       });
       setProgressState("idle");
       setSheetVisible(false);
@@ -100,7 +103,7 @@ export const PositionCard = memo(function PositionCard({
   const handleClaim = useCallback(async () => {
     setActionLoading("claim");
     setLastError(null);
-    setProgressState("signing");
+    setProgressState("preparing");
     try {
       await claimPos.mutateAsync({
         positionPubkey: position.pubkey,
@@ -307,6 +310,7 @@ export const PositionCard = memo(function PositionCard({
         <View style={styles.progressRow}>
           <ActivityIndicator size="small" color={themeColors.accent} />
           <Text style={[styles.progressText, { color: themeColors.textMuted }]}>
+            {progressState === "preparing" && "Preparing..."}
             {progressState === "signing" && "Signing..."}
             {progressState === "broadcasting" && "Broadcasting..."}
             {progressState === "confirming" && "Confirming..."}
