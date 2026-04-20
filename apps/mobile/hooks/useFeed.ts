@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
-import type { Article, PaginatedResponse } from "@mintfeed/shared";
+import type { Article, PaginatedResponse } from "@midnight/shared";
 import { useAppStore } from "@/lib/store";
 
 export function useFeed() {

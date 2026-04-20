@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { ARTICLE_SUMMARY_WORD_LIMIT, ARTICLE_TITLE_MAX_LENGTH } from "@mintfeed/shared";
+import { ARTICLE_SUMMARY_WORD_LIMIT, ARTICLE_TITLE_MAX_LENGTH } from "@midnight/shared";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -26,7 +26,7 @@ export async function rewriteArticle(
   originalBody: string
 ): Promise<GeminiResult> {
   try {
-    const prompt = `Original title: ${originalTitle}\n\nOriginal content: ${originalBody.slice(0, 2000)}`;
+    const prompt = `Original title: ${originalTitle}\n\nOriginal content: ${originalBody.slice(0, 6000)}`;
 
     const result = await model.generateContent({
       contents: [

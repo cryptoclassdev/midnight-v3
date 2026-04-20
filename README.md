@@ -6,7 +6,7 @@
   *Crypto & AI news in 60 words — swipe, bet, stay informed.*
 
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.7+-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-  [![Expo SDK](https://img.shields.io/badge/Expo_SDK-52-000020?style=flat-square&logo=expo&logoColor=white)](https://expo.dev/)
+  [![Expo SDK](https://img.shields.io/badge/Expo_SDK-54-000020?style=flat-square&logo=expo&logoColor=white)](https://expo.dev/)
   [![Hono](https://img.shields.io/badge/Hono-4.6-E36002?style=flat-square)](https://hono.dev/)
   [![Prisma](https://img.shields.io/badge/Prisma-6.x-2D3748?style=flat-square&logo=prisma&logoColor=white)](https://www.prisma.io/)
   [![License](https://img.shields.io/badge/License-Private-gray?style=flat-square)](LICENSE)
@@ -31,10 +31,10 @@ Midnight is a mobile-first news app that delivers crypto and AI headlines in a T
 ## Architecture
 
 ```
-mintfeed-v3/
+midnight-v3/
 ├── apps/
 │   ├── api/             Hono REST API (Node.js)
-│   └── mobile/          Expo SDK 52 React Native app
+│   └── mobile/          Expo SDK 54 React Native app
 ├── packages/
 │   ├── db/              Prisma ORM + PostgreSQL schema
 │   └── shared/          Shared types, constants, validators
@@ -72,8 +72,8 @@ mintfeed-v3/
 1. **Clone and install**
 
    ```bash
-   git clone https://github.com/cryptoclassdev/mintfeed-v3.git
-   cd mintfeed-v3
+   git clone https://github.com/cryptoclassdev/midnight-v3.git
+   cd midnight-v3
    pnpm install
    ```
 
@@ -164,7 +164,7 @@ railway logs --lines 50
 ```
 
 > [!NOTE]
-> Railway account: `tldrcryptolink@gmail.com`, workspace: `breakthesimulation`, project: `MintFeed V3`.
+> Railway account: `tldrcryptolink@gmail.com`, workspace: `breakthesimulation`, project: `Midnight` (still named `MintFeed V3` in Railway dashboard — rename pending).
 > Auto-deploys are triggered on push to `main` via GitHub integration.
 
 ### Mobile (EAS Build)

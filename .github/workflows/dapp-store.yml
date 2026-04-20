@@ -1,76 +1,46 @@
-name: Android APK (Staging)
+name: Solana dApp Store Submit
 
 on:
   push:
-    branches: [stage]
-    paths:
-      - "apps/mobile/**"
-      - "packages/shared/**"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/android-staging.yml"
+    tags:
+      - "v*"
   workflow_dispatch:
-
-concurrency:
-  group: android-staging-${{ github.sha }}
-  cancel-in-progress: true
+    inputs:
+      whats_new:
+        description: "What's new in this release"
+        required: true
+        default: "Bug fixes and improvements"
 
 jobs:
-  build:
-    name: Build Staging APK
+  submit:
+    name: Build + submit to Solana dApp Store
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: apps/mobile
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: 9.15.0
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: pnpm-store-${{ runner.os }}-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         working-directory: .
 
-      - name: Setup JDK
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ~/.gradle/native
-          key: gradle-${{ runner.os }}-${{ hashFiles('apps/mobile/android/**/*.gradle*', 'apps/mobile/android/gradle.properties') }}
-          restore-keys: gradle-${{ runner.os }}-
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v3
 
       - name: Decode google-services.json
         run: echo "$GOOGLE_SERVICES_JSON" | base64 -d > google-services.json
@@ -80,7 +50,7 @@ jobs:
       - name: Run Expo prebuild
         run: npx expo prebuild --clean --platform android
         env:
-          EXPO_PUBLIC_API_URL: ${{ secrets.STAGING_API_URL }}
+          EXPO_PUBLIC_API_URL: ${{ secrets.PRODUCTION_API_URL }}
           EXPO_PUBLIC_SOLANA_CLUSTER: ${{ vars.SOLANA_CLUSTER || 'mainnet-beta' }}
           EXPO_PUBLIC_SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
 
@@ -96,7 +66,7 @@ jobs:
           ./gradlew assembleRelease --build-cache --no-daemon -x lint \
             -PreactNativeArchitectures=arm64-v8a
         env:
-          EXPO_PUBLIC_API_URL: ${{ secrets.STAGING_API_URL }}
+          EXPO_PUBLIC_API_URL: ${{ secrets.PRODUCTION_API_URL }}
           EXPO_PUBLIC_SOLANA_CLUSTER: ${{ vars.SOLANA_CLUSTER || 'mainnet-beta' }}
           EXPO_PUBLIC_SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -104,9 +74,26 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           SENTRY_DISABLE_AUTO_UPLOAD: 'true'
 
-      - name: Upload APK
+      - name: Locate APK
+        id: apk
+        run: |
+          APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          echo "path=$APK" >> $GITHUB_OUTPUT
+          echo "Built: $APK"
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: midnight-staging-${{ github.sha }}
-          path: apps/mobile/android/app/build/outputs/apk/release/*.apk
-          retention-days: 14
+          name: midnight-dapp-store-${{ github.ref_name }}
+          path: apps/mobile/${{ steps.apk.outputs.path }}
+          retention-days: 90
+
+      - name: Submit to Solana dApp Store
+        env:
+          DAPP_STORE_API_KEY: ${{ secrets.DAPP_STORE_API_KEY }}
+        run: |
+          WHATS_NEW="${{ github.event.inputs.whats_new || format('Release {0}', github.ref_name) }}"
+          pnpm dapp-store:submit \
+            --apk-file ${{ steps.apk.outputs.path }} \
+            --whats-new "$WHATS_NEW"
+        working-directory: .

@@ -1,4 +1,4 @@
-import { microToUsd } from "@mintfeed/shared";
+import { microToUsd } from "@midnight/shared";
 
 /**
  * ProfileView position splitting logic tests.

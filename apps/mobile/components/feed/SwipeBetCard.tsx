@@ -17,9 +17,9 @@ import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
 import { useLiveMarketPrice } from "@/hooks/useLiveMarketPrice";
-import { formatCompactVolume, formatCompactDate } from "@mintfeed/shared";
+import { formatCompactVolume, formatCompactDate } from "@midnight/shared";
 import * as haptics from "@/lib/haptics";
-import type { PredictionMarket } from "@mintfeed/shared";
+import type { PredictionMarket } from "@midnight/shared";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 

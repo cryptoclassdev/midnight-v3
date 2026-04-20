@@ -1,14 +1,14 @@
 import { Hono } from "hono";
 import ky, { HTTPError } from "ky";
-import type { SubmitSignedTransactionRequest } from "@mintfeed/shared";
+import type { SubmitSignedTransactionRequest } from "@midnight/shared";
 import {
   USDC_MINT,
   CreateOrderSchema,
   ClosePositionSchema,
   ClaimPositionSchema,
   formatZodErrors,
-} from "@mintfeed/shared";
-import { prisma } from "@mintfeed/db";
+} from "@midnight/shared";
+import { prisma } from "@midnight/db";
 import { relaySignedTransaction } from "../services/solana-relay.service";
 
 const JUPITER_API_URL = "https://api.jup.ag/prediction/v1";

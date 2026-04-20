@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchOrders } from "@/lib/prediction-client";
-import type { JupiterPaginatedResponse, PredictionOrder } from "@mintfeed/shared";
+import type { JupiterPaginatedResponse, PredictionOrder } from "@midnight/shared";
 
 const ORDERS_REFETCH_INTERVAL_MS = 30_000;
 

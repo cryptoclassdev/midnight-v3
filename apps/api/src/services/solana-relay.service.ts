@@ -1,5 +1,5 @@
 import { VersionedTransaction, PublicKey } from "@solana/web3.js";
-import type { SubmitSignedTransactionRequest, SubmitSignedTransactionResponse } from "@mintfeed/shared";
+import type { SubmitSignedTransactionRequest, SubmitSignedTransactionResponse } from "@midnight/shared";
 
 const DEFAULT_SOLANA_RPC_URL =
   process.env.SOLANA_RPC_URL

@@ -4,8 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
-import { microToUsd } from "@mintfeed/shared";
-import type { PredictionOrder } from "@mintfeed/shared";
+import { microToUsd } from "@midnight/shared";
+import type { PredictionOrder } from "@midnight/shared";
 
 interface OrderRowProps {
   order: PredictionOrder;

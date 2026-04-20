@@ -1,5 +1,5 @@
 import ky from "ky";
-import { prisma } from "@mintfeed/db";
+import { prisma } from "@midnight/db";
 import { sendSettlementNotification } from "./notification.service";
 
 const JUPITER_API_URL = "https://api.jup.ag/prediction/v1";

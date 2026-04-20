@@ -19,7 +19,7 @@ import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize } from "@/constants/typography";
 import { NewsCard } from "./NewsCard";
-import { dedupeArticlesByContent, type Article } from "@mintfeed/shared";
+import { dedupeArticlesByContent, type Article } from "@midnight/shared";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 

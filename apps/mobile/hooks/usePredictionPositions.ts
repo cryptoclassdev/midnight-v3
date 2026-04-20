@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchPositions } from "@/lib/prediction-client";
-import type { JupiterPaginatedResponse, PredictionPosition } from "@mintfeed/shared";
+import type { JupiterPaginatedResponse, PredictionPosition } from "@midnight/shared";
 
 const POSITIONS_REFETCH_INTERVAL_MS = 30_000;
 

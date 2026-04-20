@@ -1,4 +1,4 @@
-# MintFeed v3 - Tech Stack
+# Midnight - Tech Stack
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|

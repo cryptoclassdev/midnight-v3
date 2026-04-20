@@ -1,12 +1,13 @@
 import { createHash } from "node:crypto";
-import { prisma } from "@mintfeed/db";
+import { prisma } from "@midnight/db";
 import { fetchAllFeeds, type ParsedFeedItem } from "./rss-fetcher.service";
 import { fetchAllTwitterFeeds } from "./twitter-fetcher.service";
+import { enrichContent } from "./article-fetcher.service";
 import { rewriteArticle } from "./gemini.service";
 import { generateBlurhash } from "./image.service";
 import { matchMarketForArticle } from "./jupiter-prediction.service";
 import { broadcastNotification } from "./notification.service";
-import { ARTICLE_SUMMARY_WORD_LIMIT } from "@mintfeed/shared";
+import { ARTICLE_SUMMARY_WORD_LIMIT } from "@midnight/shared";
 
 function truncateToWordLimit(text: string, limit: number = ARTICLE_SUMMARY_WORD_LIMIT): string {
   const words = text.split(/\s+/);
@@ -63,7 +64,13 @@ async function processItem(item: ParsedFeedItem, options: ProcessItemOptions = {
   });
   if (titleDuplicate) return;
 
-  const { title, summary, breaking } = await rewriteArticle(item.title, item.content);
+  // Enrich short RSS snippets by fetching the article body so Gemini has more to summarize.
+  // Twitter items already carry the full tweet text — no enrichment needed.
+  const enrichedContent = sourceType === "TWITTER"
+    ? item.content
+    : await enrichContent(item.content, item.link);
+
+  const { title, summary, breaking } = await rewriteArticle(item.title, enrichedContent);
   const imageBlurhash = item.imageUrl
     ? await generateBlurhash(item.imageUrl)
     : null;
@@ -78,7 +85,7 @@ async function processItem(item: ParsedFeedItem, options: ProcessItemOptions = {
         sourceName: item.sourceName,
         category: item.category,
         originalTitle: item.title,
-        originalBody: item.content,
+        originalBody: enrichedContent,
         title,
         summary: truncateToWordLimit(summary, 60),
         imageUrl: item.imageUrl,

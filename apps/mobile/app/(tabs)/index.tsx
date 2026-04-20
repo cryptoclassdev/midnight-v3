@@ -3,7 +3,7 @@ import { SwipeFeed } from "@/components/feed/SwipeFeed";
 import { useAppStore } from "@/lib/store";
 import { colors } from "@/constants/theme";
 import { fonts, fontSize, letterSpacing } from "@/constants/typography";
-import { CATEGORIES, CategoryLabel } from "@mintfeed/shared";
+import { CATEGORIES, CategoryLabel } from "@midnight/shared";
 
 const CHIP_ACCENT: Record<(typeof CATEGORIES)[number], keyof typeof colors.dark> = {
   all: "accent",
