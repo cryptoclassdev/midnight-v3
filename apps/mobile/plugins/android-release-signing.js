@@ -23,6 +23,7 @@ function withAndroidReleaseSigning(config) {
             storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD') ?: ''
             keyAlias System.getenv('ANDROID_KEY_ALIAS') ?: ''
             keyPassword System.getenv('ANDROID_KEY_PASSWORD') ?: ''
+            storeType 'PKCS12'
         }`;
 
     gradle = gradle.replace(
