@@ -99,10 +99,8 @@ jobs:
           echo "--- keytool verify with CI env vars ---"
           keytool -list -keystore android/app/release.keystore -storepass "$KS_PASS" -alias "$ALIAS" && echo "keytool list OK"
           keytool -certreq -keystore android/app/release.keystore -storepass "$KS_PASS" -alias "$ALIAS" -keypass "$KEY_PASS" -file /tmp/test.csr 2>&1 && echo "keytool certreq (key password verified) OK" || echo "keytool certreq FAILED"
-          echo "--- generated android/app/build.gradle signing config ---"
-          sed -n '/signingConfigs\s*{/,/^\s*}/p' android/app/build.gradle | head -40
-          echo "--- generated android/app/build.gradle buildTypes.release ---"
-          sed -n '/buildTypes\s*{/,/^\s*}$/p' android/app/build.gradle | head -40
+          echo "--- FULL generated android/app/build.gradle ---"
+          cat android/app/build.gradle
         env:
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
