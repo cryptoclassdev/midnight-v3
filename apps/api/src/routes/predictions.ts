@@ -141,20 +141,26 @@ function sleep(ms: number): Promise<void> {
 async function withPredictionWriteRetry<T>(
   run: () => Promise<T>,
 ): Promise<T> {
-  try {
-    return await run();
-  } catch (error) {
-    if (!(error instanceof HTTPError) || error.response.status !== 429) {
-      throw error;
+  let attempt = 0;
+
+  while (attempt < 3) {
+    try {
+      return await run();
+    } catch (error) {
+      if (!(error instanceof HTTPError) || error.response.status !== 429 || attempt === 2) {
+        throw error;
+      }
+
+      const retryAfterSeconds = getJupiterRetryAfterSeconds(error.response.headers) ?? 1;
+      const retryDelayMs = Math.min((retryAfterSeconds + 1) * 1000, 5_000);
+
+      pauseBackgroundPredictionReadsForMs(retryDelayMs);
+      await sleep(retryDelayMs);
+      attempt += 1;
     }
-
-    const retryAfterSeconds = getJupiterRetryAfterSeconds(error.response.headers) ?? 1;
-    const retryDelayMs = Math.min((retryAfterSeconds + 1) * 1000, 8_000);
-
-    pauseBackgroundPredictionReadsForMs(retryDelayMs);
-    await sleep(retryDelayMs);
-    return run();
   }
+
+  throw new Error("Prediction write retry loop exhausted");
 }
 
 // Per-endpoint freshness budgets. On loader failure within these budgets the
