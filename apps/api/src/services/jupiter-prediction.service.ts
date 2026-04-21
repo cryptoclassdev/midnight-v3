@@ -9,6 +9,7 @@ const BACKGROUND_PREDICTION_WINDOW_MS = 10_000;
 const BACKGROUND_PREDICTION_REQUEST_LIMIT = 2;
 const BACKGROUND_PREDICTION_FALLBACK_COOLDOWN_MS = 30_000;
 const BACKFILL_ARTICLE_LIMIT = 4;
+const STAGING_RELEASE_MODE = (process.env.RAILWAY_PUBLIC_DOMAIN ?? "").includes("staging");
 
 const jupiterClient = ky.create({
   prefixUrl: JUPITER_API_URL,
@@ -174,6 +175,11 @@ export async function matchMarketForArticle(
   originalTitle: string,
   _rewrittenTitle?: string,
 ): Promise<void> {
+  if (STAGING_RELEASE_MODE) {
+    console.log("[Jupiter] Skipping article matching in staging release mode");
+    return;
+  }
+
   try {
     // Check how many markets already linked — skip if already at cap
     const existingLinks = await prisma.articlePredictionMarket.findMany({
@@ -315,6 +321,11 @@ export async function matchMarketForArticle(
  * Backfill prediction market matches for articles with fewer than 3 markets.
  */
 export async function backfillMarketMatches(): Promise<void> {
+  if (STAGING_RELEASE_MODE) {
+    console.log("[Jupiter] Skipping market backfill in staging release mode");
+    return;
+  }
+
   // Find articles with fewer than MAX_MARKETS_PER_ARTICLE linked markets
   const undermatched = await prisma.$queryRaw<Array<{ id: string; originalTitle: string; title: string; linkCount: bigint }>>`
     SELECT a.id, a."originalTitle", a.title, COUNT(apm.id)::bigint AS "linkCount"
@@ -354,6 +365,11 @@ export async function backfillMarketMatches(): Promise<void> {
  * Refresh outcomePrices for all active (non-closed) prediction markets.
  */
 export async function refreshMarketPrices(): Promise<void> {
+  if (STAGING_RELEASE_MODE) {
+    console.log("[Jupiter] Skipping market refresh in staging release mode");
+    return;
+  }
+
   const duplicateGroups = await prisma.predictionMarket.groupBy({
     by: ["eventId"],
     _count: { eventId: true },
