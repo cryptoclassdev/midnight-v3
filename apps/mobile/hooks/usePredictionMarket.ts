@@ -3,7 +3,9 @@ import { fetchMarket, fetchOrderbook } from "@/lib/prediction-client";
 import type { PredictionMarketDetail, OrderbookData } from "@midnight/shared";
 
 const MARKET_REFETCH_INTERVAL_MS = 15_000;
+const MARKET_STALE_TIME_MS = 10_000;
 const ORDERBOOK_REFETCH_INTERVAL_MS = 10_000;
+const ORDERBOOK_STALE_TIME_MS = 5_000;
 
 export function usePredictionMarketDetail(
   marketId: string | undefined,
@@ -14,6 +16,8 @@ export function usePredictionMarketDetail(
     queryFn: () => fetchMarket(marketId!),
     enabled: !!marketId,
     refetchInterval: MARKET_REFETCH_INTERVAL_MS,
+    staleTime: MARKET_STALE_TIME_MS,
+    refetchOnMount: false,
     placeholderData: (prev) => prev ?? options?.initialData,
   });
 }
@@ -24,5 +28,7 @@ export function usePredictionOrderbook(marketId: string | undefined) {
     queryFn: () => fetchOrderbook(marketId!),
     enabled: !!marketId,
     refetchInterval: ORDERBOOK_REFETCH_INTERVAL_MS,
+    staleTime: ORDERBOOK_STALE_TIME_MS,
+    refetchOnMount: false,
   });
 }

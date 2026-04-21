@@ -26,6 +26,7 @@ export function useLiveMarketPrice(marketId: string | undefined) {
     },
     staleTime: STALE_TIME,
     refetchInterval: REFETCH_INTERVAL,
+    refetchOnMount: false,
     enabled: !!marketId,
     retry: false,
   });

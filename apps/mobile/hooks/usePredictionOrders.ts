@@ -12,6 +12,7 @@ export function usePredictionOrders(ownerPubkey: string | undefined) {
     enabled: !!ownerPubkey,
     refetchInterval: ORDERS_REFETCH_INTERVAL_MS,
     staleTime: ORDERS_STALE_TIME_MS,
+    refetchOnMount: false,
     placeholderData: (prev) => prev,
   });
 }

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import type { Context } from "hono";
 import ky, { HTTPError } from "ky";
 import type { SubmitSignedTransactionRequest } from "@midnight/shared";
 import {
@@ -10,6 +11,7 @@ import {
 } from "@midnight/shared";
 import { prisma } from "@midnight/db";
 import { relaySignedTransaction } from "../services/solana-relay.service";
+import { jupiterCache, type LoadStatus } from "../services/jupiter-cache";
 
 const JUPITER_API_URL = "https://api.jup.ag/prediction/v1";
 
@@ -20,18 +22,35 @@ const jupiter = ky.create({
   retry: { limit: 1 },
 });
 
-async function forwardJupiterError(err: unknown, c: any) {
+async function forwardJupiterError(err: unknown, c: Context) {
   if (err instanceof HTTPError) {
     const status = err.response.status;
-    const body = await err.response.json().catch(() => null);
+    const body = await err.response.json().catch(() => null) as { message?: string } | null;
     console.error("[Jupiter]", status, body);
     // Return sanitized error — don't leak internal Jupiter API details
     const message = typeof body?.message === "string" ? body.message : "Request failed. Please try again.";
-    return c.json({ error: message }, status >= 400 && status < 500 ? status : 502);
+    return c.json(
+      { error: message },
+      (status >= 400 && status < 500 ? status : 502) as 400 | 401 | 403 | 404 | 429 | 502,
+    );
   }
   console.error("[Jupiter] Non-HTTP error:", err);
   return c.json({ error: "Service temporarily unavailable" }, 502);
 }
+
+function setCacheStatus(c: Context, status: LoadStatus): void {
+  c.header("X-Cache", status);
+}
+
+// Per-endpoint freshness budgets. On loader failure within these budgets the
+// cache falls back to the last successful value and sets X-Cache: stale. Long
+// enough to absorb Jupiter's 429 bursts; short enough that a refreshed order
+// book isn't stale for perceptible periods.
+const TTL_MARKET_MS = 5_000;
+const TTL_ORDERBOOK_MS = 5_000;
+const TTL_TRADING_STATUS_MS = 30_000;
+const TTL_PER_WALLET_MS = 10_000;
+const TTL_LIVE_PRICE_MS = 15_000;
 
 export const predictionRoutes = new Hono();
 
@@ -56,50 +75,73 @@ async function fetchEventVolume(eventId: string): Promise<number | null> {
 predictionRoutes.get("/predictions/markets/:marketId", async (c) => {
   const { marketId } = c.req.param();
   try {
-    // Fetch market and DB record in parallel — the DB record only feeds the
-    // event-volume fallback, so overlapping it with the Jupiter round-trip
-    // hides the extra latency.
-    const [data, dbMarket] = await Promise.all([
-      jupiter.get(`markets/${marketId}`).json<any>(),
-      prisma.predictionMarket.findUnique({
-        where: { id: marketId },
-        select: { eventId: true },
-      }).catch(() => null),
-    ]);
+    const { value, status } = await jupiterCache.fetch(
+      `market:${marketId}`,
+      TTL_MARKET_MS,
+      async () => {
+        // Fetch market and DB record in parallel — the DB record only feeds the
+        // event-volume fallback, so overlapping it with the Jupiter round-trip
+        // hides the extra latency.
+        const [data, dbMarket] = await Promise.all([
+          jupiter.get(`markets/${marketId}`).json<any>(),
+          prisma.predictionMarket.findUnique({
+            where: { id: marketId },
+            select: { eventId: true },
+          }).catch(() => null),
+        ]);
 
-    // Reject non-binary markets
-    if (!data?.pricing || data.pricing.buyYesPriceUsd <= 0 || data.pricing.buyNoPriceUsd <= 0) {
+        // Reject non-binary markets — thrown so it's never cached as "success"
+        if (!data?.pricing || data.pricing.buyYesPriceUsd <= 0 || data.pricing.buyNoPriceUsd <= 0) {
+          throw new NonBinaryMarketError();
+        }
+
+        // Fall back to cached event-level volume when market pricing reports 0
+        if ((!data.pricing.volume || data.pricing.volume === 0) && dbMarket?.eventId) {
+          const eventVolume = await fetchEventVolume(dbMarket.eventId);
+          if (eventVolume && eventVolume > 0) {
+            data.pricing.volume = eventVolume;
+          }
+        }
+
+        // Normalize: Jupiter returns title/rulesPrimary at top level,
+        // but PredictionMarketDetail expects them nested under metadata
+        const { title, rulesPrimary, ...rest } = data;
+        return {
+          ...rest,
+          metadata: {
+            title: title ?? "Market",
+            rulesPrimary: rulesPrimary ?? undefined,
+          },
+        };
+      },
+    );
+    setCacheStatus(c, status);
+    return c.json(value);
+  } catch (err) {
+    if (err instanceof NonBinaryMarketError) {
       return c.json({ error: "Market is not a binary Yes/No market" }, 404);
     }
-
-    // Fall back to cached event-level volume when market pricing reports 0
-    if ((!data.pricing.volume || data.pricing.volume === 0) && dbMarket?.eventId) {
-      const eventVolume = await fetchEventVolume(dbMarket.eventId);
-      if (eventVolume && eventVolume > 0) {
-        data.pricing.volume = eventVolume;
-      }
-    }
-
-    // Normalize: Jupiter returns title/rulesPrimary at top level,
-    // but PredictionMarketDetail expects them nested under metadata
-    const { title, rulesPrimary, ...rest } = data;
-    return c.json({
-      ...rest,
-      metadata: {
-        title: title ?? "Market",
-        rulesPrimary: rulesPrimary ?? undefined,
-      },
-    });
-  } catch (err) {
     return forwardJupiterError(err, c);
   }
 });
 
+class NonBinaryMarketError extends Error {
+  constructor() {
+    super("non-binary market");
+    this.name = "NonBinaryMarketError";
+  }
+}
+
 predictionRoutes.get("/predictions/orderbook/:marketId", async (c) => {
   const { marketId } = c.req.param();
   try {
-    const data = await jupiter.get(`orderbook/${marketId}`).json();
-    return c.json(data);
+    const { value, status } = await jupiterCache.fetch(
+      `orderbook:${marketId}`,
+      TTL_ORDERBOOK_MS,
+      () => jupiter.get(`orderbook/${marketId}`).json(),
+    );
+    setCacheStatus(c, status);
+    return c.json(value as object);
   } catch (err) {
     return forwardJupiterError(err, c);
   }
@@ -108,8 +150,17 @@ predictionRoutes.get("/predictions/orderbook/:marketId", async (c) => {
 // --- Trading Status ---
 
 predictionRoutes.get("/predictions/trading-status", async (c) => {
-  const data = await jupiter.get("trading-status").json();
-  return c.json(data);
+  try {
+    const { value, status } = await jupiterCache.fetch(
+      "trading-status",
+      TTL_TRADING_STATUS_MS,
+      () => jupiter.get("trading-status").json(),
+    );
+    setCacheStatus(c, status);
+    return c.json(value as object);
+  } catch (err) {
+    return forwardJupiterError(err, c);
+  }
 });
 
 // --- Orders ---
@@ -143,9 +194,19 @@ predictionRoutes.post("/predictions/orders", async (c) => {
 });
 
 predictionRoutes.get("/predictions/orders", async (c) => {
-  const params = Object.fromEntries(new URL(c.req.url).searchParams);
-  const data = await jupiter.get("orders", { searchParams: params }).json();
-  return c.json(data);
+  const url = new URL(c.req.url);
+  const params = Object.fromEntries(url.searchParams);
+  try {
+    const { value, status } = await jupiterCache.fetch(
+      `orders:${url.search}`,
+      TTL_PER_WALLET_MS,
+      () => jupiter.get("orders", { searchParams: params }).json(),
+    );
+    setCacheStatus(c, status);
+    return c.json(value as object);
+  } catch (err) {
+    return forwardJupiterError(err, c);
+  }
 });
 
 predictionRoutes.post("/predictions/transactions/submit", async (c) => {
@@ -163,29 +224,42 @@ predictionRoutes.post("/predictions/transactions/submit", async (c) => {
 // --- Positions ---
 
 predictionRoutes.get("/predictions/positions", async (c) => {
-  const params = Object.fromEntries(new URL(c.req.url).searchParams);
-  const data = await jupiter.get("positions", { searchParams: params }).json<any>();
+  const url = new URL(c.req.url);
+  const params = Object.fromEntries(url.searchParams);
+  try {
+    const { value, status } = await jupiterCache.fetch(
+      `positions:${url.search}`,
+      TTL_PER_WALLET_MS,
+      async () => {
+        const data = await jupiter.get("positions", { searchParams: params }).json<any>();
 
-  // Normalize positions: use event title (the actual question) and map field names
-  const positions = data?.data ?? [];
-  const enriched = positions.map((pos: any) => {
-    // Use eventMetadata.title (the question) instead of market.title (the outcome name "Yes"/"No")
-    const title = pos.eventMetadata?.title ?? pos.market?.title ?? "Unknown Market";
-    return {
-      ...pos,
-      // Map Jupiter's totalCostUsd to costBasisUsd for the client
-      costBasisUsd: pos.costBasisUsd ?? pos.totalCostUsd ?? "0",
-      market: {
-        ...pos.market,
-        title,
-        status: pos.marketMetadata?.status ?? pos.market?.status ?? "open",
-        result: pos.marketMetadata?.result ?? pos.market?.result ?? null,
-        pricing: pos.market?.pricing,
+        // Normalize positions: use event title (the actual question) and map field names
+        const positions = data?.data ?? [];
+        const enriched = positions.map((pos: any) => {
+          // Use eventMetadata.title (the question) instead of market.title (the outcome name "Yes"/"No")
+          const title = pos.eventMetadata?.title ?? pos.market?.title ?? "Unknown Market";
+          return {
+            ...pos,
+            // Map Jupiter's totalCostUsd to costBasisUsd for the client
+            costBasisUsd: pos.costBasisUsd ?? pos.totalCostUsd ?? "0",
+            market: {
+              ...pos.market,
+              title,
+              status: pos.marketMetadata?.status ?? pos.market?.status ?? "open",
+              result: pos.marketMetadata?.result ?? pos.market?.result ?? null,
+              pricing: pos.market?.pricing,
+            },
+          };
+        });
+
+        return { ...data, data: enriched };
       },
-    };
-  });
-
-  return c.json({ ...data, data: enriched });
+    );
+    setCacheStatus(c, status);
+    return c.json(value as object);
+  } catch (err) {
+    return forwardJupiterError(err, c);
+  }
 });
 
 predictionRoutes.delete("/predictions/positions/:positionPubkey", async (c) => {
@@ -275,13 +349,20 @@ predictionRoutes.get("/predictions/live", async (c) => {
   await Promise.allSettled(
     marketIds.map(async (id) => {
       try {
-        const market = await jupiter.get(`markets/${id}`).json<{
-          pricing: { buyYesPriceUsd: number; buyNoPriceUsd: number };
-        }>();
-        results[id] = {
-          Yes: Math.round((market.pricing.buyYesPriceUsd / 1_000_000) * 100) / 100,
-          No: Math.round((market.pricing.buyNoPriceUsd / 1_000_000) * 100) / 100,
-        };
+        const { value: prices } = await jupiterCache.fetch(
+          `live:${id}`,
+          TTL_LIVE_PRICE_MS,
+          async () => {
+            const market = await jupiter.get(`markets/${id}`).json<{
+              pricing: { buyYesPriceUsd: number; buyNoPriceUsd: number };
+            }>();
+            return {
+              Yes: Math.round((market.pricing.buyYesPriceUsd / 1_000_000) * 100) / 100,
+              No: Math.round((market.pricing.buyNoPriceUsd / 1_000_000) * 100) / 100,
+            };
+          },
+        );
+        results[id] = prices;
       } catch { /* keep existing DB prices */ }
     }),
   );

@@ -12,6 +12,7 @@ export function usePredictionPositions(ownerPubkey: string | undefined) {
     enabled: !!ownerPubkey,
     refetchInterval: POSITIONS_REFETCH_INTERVAL_MS,
     staleTime: POSITIONS_STALE_TIME_MS,
+    refetchOnMount: false,
     placeholderData: (prev) => prev,
   });
 }

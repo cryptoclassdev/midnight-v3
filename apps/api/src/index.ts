@@ -68,7 +68,25 @@ app.use("/api/v1/*", rateLimit({ max: 100, keyPrefix: "api" }));
 
 // Stricter limits on sensitive endpoints
 app.use("/api/v1/predictions/transactions/*", rateLimit({ max: 10, keyPrefix: "tx" }));
-app.use("/api/v1/predictions/orders", rateLimit({ max: 20, keyPrefix: "orders" }));
+// Orders quota is per-wallet so that multiple clients on the same IP (office
+// WiFi, mobile hotspot, shared VPN) don't contend for a single 20/min bucket.
+// Falls back to IP if ownerPubkey isn't present.
+app.use(
+  "/api/v1/predictions/orders",
+  rateLimit({
+    max: 20,
+    keyPrefix: "orders",
+    keyExtractor: async (c) => {
+      const fromQuery = c.req.query("ownerPubkey");
+      if (fromQuery) return fromQuery;
+      if (c.req.method === "POST") {
+        const body = await c.req.json().catch(() => null) as { ownerPubkey?: string } | null;
+        return body?.ownerPubkey;
+      }
+      return undefined;
+    },
+  }),
+);
 app.use("/api/v1/notifications/register", rateLimit({ max: 10, keyPrefix: "notif-reg" }));
 
 app.route("/api/v1", feedRoutes);
