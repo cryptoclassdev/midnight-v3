@@ -375,6 +375,9 @@ predictionRoutes.get("/predictions/orders", async (c) => {
 predictionRoutes.post("/predictions/transactions/submit", async (c) => {
   try {
     const body = await c.req.json<SubmitSignedTransactionRequest>();
+    // Legacy endpoint for older mobile builds that still rely on server-side
+    // rebroadcast. Newer builds send prediction transactions directly from the
+    // wallet and only use the API for unsigned transaction creation.
     const result = await relaySignedTransaction(body);
     return c.json(result);
   } catch (error) {

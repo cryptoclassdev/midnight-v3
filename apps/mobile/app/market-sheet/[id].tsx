@@ -137,7 +137,7 @@ export default function MarketSheet() {
 
     const usd = parseTradeAmount(amount)!;
     try {
-      await createOrder.mutateAsync({
+      const result = await createOrder.mutateAsync({
         ownerPubkey: walletAddress,
         marketId,
         isYes: selectedSide === "yes",
@@ -146,7 +146,11 @@ export default function MarketSheet() {
         depositMint: USDC_MINT,
       });
       haptics.success();
-      showToast("success", "Bet Placed", `Your ${selectedSide.toUpperCase()} bet was submitted.`);
+      if (result.status === "pending") {
+        showToast("info", "Transaction Pending", `Your ${selectedSide.toUpperCase()} bet was submitted.`);
+      } else {
+        showToast("success", "Bet Placed", `Your ${selectedSide.toUpperCase()} bet was confirmed.`);
+      }
       setAmount("");
     } catch (err: unknown) {
       haptics.error();

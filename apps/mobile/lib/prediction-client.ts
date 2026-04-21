@@ -6,8 +6,6 @@ import type {
   CreateOrderRequest,
   CreateOrderResponse,
   ClaimPositionResponse,
-  SubmitSignedTransactionRequest,
-  SubmitSignedTransactionResponse,
   PredictionOrder,
   PredictionPosition,
   JupiterPaginatedResponse,
@@ -33,36 +31,6 @@ export function fetchTradingStatus(): Promise<TradingStatus> {
 
 export function createOrder(body: CreateOrderRequest): Promise<CreateOrderResponse> {
   return api.post(`${BASE}/orders`, { json: body }).json();
-}
-
-export async function submitSignedTransaction(
-  body: SubmitSignedTransactionRequest,
-): Promise<SubmitSignedTransactionResponse> {
-  try {
-    return await api
-      .post(`${BASE}/transactions/submit`, {
-        json: body,
-        timeout: 45_000,
-        retry: 0,
-      })
-      .json();
-  } catch (err) {
-    // After returning from wallet app (background → foreground), the network
-    // stack often isn't ready yet, causing "Network request failed". Wait
-    // briefly and retry once.
-    const msg = err instanceof Error ? err.message : "";
-    if (/network request failed/i.test(msg)) {
-      await new Promise((r) => setTimeout(r, 1500));
-      return api
-        .post(`${BASE}/transactions/submit`, {
-          json: body,
-          timeout: 45_000,
-          retry: 0,
-        })
-        .json();
-    }
-    throw err;
-  }
 }
 
 // --- Orders ---

@@ -146,3 +146,33 @@ export async function signPredictionTransaction(
   // stack is often not yet ready, causing spurious "network request failed".
   return fromUint8Array(signedTx.serialize());
 }
+
+export async function sendPredictionTransaction(
+  sendFn: (tx: VersionedTransaction, minContextSlot?: number) => Promise<string>,
+  base64Transaction: string,
+  txMeta: TransactionMeta,
+): Promise<string> {
+  await ensureTransactionValid(txMeta);
+
+  const txBytes = toUint8Array(base64Transaction);
+  const transaction = VersionedTransaction.deserialize(txBytes);
+
+  try {
+    return await withTimeout(
+      // `minContextSlot` is optional in the underlying MWA protocol, but the
+      // wallet-ui wrapper types it as required. Passing 0 preserves the default
+      // behavior without adding another RPC read on the hot trade path.
+      sendFn(transaction, 0),
+      WALLET_SIGN_TIMEOUT_MS,
+      "Wallet send",
+    );
+  } catch (error) {
+    if (isUserRejection(error)) {
+      throw walletError("WALLET_APPROVAL_REJECTED", error);
+    }
+    if (isTransactionExpired(error)) {
+      throw walletError("TRANSACTION_EXPIRED", error);
+    }
+    throw walletError("TRANSACTION_SEND_FAILED", error);
+  }
+}

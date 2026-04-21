@@ -3,7 +3,6 @@ import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import {
   fetchTradingStatus,
   createOrder,
-  submitSignedTransaction,
   closePosition,
   closeAllPositions,
   claimPosition,
@@ -11,7 +10,7 @@ import {
 import {
   isWalletError,
   isTransactionExpired,
-  signPredictionTransaction,
+  sendPredictionTransaction,
   withTimeout,
   type TransactionMeta,
 } from "@/lib/wallet";
@@ -27,8 +26,7 @@ import type { VersionedTransaction } from "@solana/web3.js";
 
 const TRADING_STATUS_REFETCH_INTERVAL_MS = 30_000;
 const CLOSE_POSITION_TIMEOUT_MS = 60_000;
-
-type SignFn = (tx: VersionedTransaction) => Promise<VersionedTransaction>;
+const TRADE_REFRESH_DELAYS_MS = [0, 3_000, 8_000] as const;
 
 export function toWalletActionError(error: unknown): Error {
   if (isWalletError(error)) {
@@ -38,36 +36,49 @@ export function toWalletActionError(error: unknown): Error {
   return new Error(`Wallet signing failed: ${message}`);
 }
 
-export async function toRelayActionError(error: unknown): Promise<Error> {
-  const httpErr = error as {
-    response?: { json?: () => Promise<Record<string, string>> };
-    message?: string;
-  };
-  const body = await httpErr?.response?.json?.().catch(() => null);
-  const message =
-    body?.message ??
-    httpErr?.message ??
-    "Transaction broadcast failed. Try again.";
-  return new Error(message);
-}
-
 interface RelayResult {
   signature: string;
   status: "confirmed" | "pending";
 }
 
-async function signAndRelay(
-  signFn: SignFn,
+async function signAndSend(
+  sendFn: (tx: VersionedTransaction, minContextSlot?: number) => Promise<string>,
   unsignedTransaction: string,
   txMeta: TransactionMeta,
 ): Promise<RelayResult> {
-  const signedTransaction = await signPredictionTransaction(
-    signFn,
+  const signature = await sendPredictionTransaction(
+    sendFn,
     unsignedTransaction,
     txMeta,
   );
-  const result = await submitSignedTransaction({ signedTransaction, txMeta });
-  return { signature: result.signature, status: result.status ?? "confirmed" };
+  return { signature, status: "pending" };
+}
+
+function refreshTradingQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  walletAddress: string | null,
+): void {
+  if (!walletAddress) return;
+
+  queryClient.invalidateQueries({
+    queryKey: ["prediction-positions", walletAddress],
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["prediction-orders", walletAddress],
+  });
+}
+
+function scheduleTradingRefreshes(
+  queryClient: ReturnType<typeof useQueryClient>,
+  walletAddress: string | null,
+): void {
+  if (!walletAddress) return;
+
+  for (const delayMs of TRADE_REFRESH_DELAYS_MS) {
+    setTimeout(() => {
+      refreshTradingQueries(queryClient, walletAddress);
+    }, delayMs);
+  }
 }
 
 export function useTradingStatus() {
@@ -80,7 +91,7 @@ export function useTradingStatus() {
 
 export function useCreateOrder() {
   const queryClient = useQueryClient();
-  const { account, signTransactions } = useMobileWallet();
+  const { account, signAndSendTransactions } = useMobileWallet();
   const walletAddress = account?.address.toString() ?? null;
 
   return useMutation<RelayResult, Error, CreateOrderRequest>({
@@ -153,8 +164,8 @@ export function useCreateOrder() {
         }));
 
       try {
-        const result = await signAndRelay(
-          (tx) => signTransactions(tx),
+        const result = await signAndSend(
+          (tx, minContextSlot) => signAndSendTransactions(tx, minContextSlot ?? 0),
           response.transaction,
           response.txMeta,
         );
@@ -170,19 +181,14 @@ export function useCreateOrder() {
           (error as any).retryable = true;
           throw error;
         }
-        if (__DEV__) console.warn("[createOrder] Relay failed:", err);
-        throw await toRelayActionError(err);
+        if (__DEV__) console.warn("[createOrder] Wallet send failed:", err);
+        throw err instanceof Error
+          ? err
+          : new Error("Transaction broadcast failed. Try again.");
       }
     },
     onSuccess: () => {
-      if (walletAddress) {
-        queryClient.invalidateQueries({
-          queryKey: ["prediction-positions", walletAddress],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["prediction-orders", walletAddress],
-        });
-      }
+      scheduleTradingRefreshes(queryClient, walletAddress);
     },
   });
 }
@@ -203,7 +209,7 @@ export interface ClosePositionVariables {
 
 export function useClosePosition() {
   const queryClient = useQueryClient();
-  const { account, signTransactions } = useMobileWallet();
+  const { account, signAndSendTransactions } = useMobileWallet();
   const walletAddress = account?.address.toString() ?? null;
 
   return useMutation<RelayResult, Error, ClosePositionVariables>({
@@ -234,13 +240,13 @@ export function useClosePosition() {
         throw new Error(body?.error ?? body?.message ?? httpErr?.message ?? "Failed to close position");
       }
 
-      // API is done — from here on we are waiting on the wallet + relay.
+      // API is done — from here on we are waiting on the wallet send flow.
       onBeforeSign?.();
 
       try {
         return await withTimeout(
-          signAndRelay(
-            (tx) => signTransactions(tx),
+          signAndSend(
+            (tx, minContextSlot) => signAndSendTransactions(tx, minContextSlot ?? 0),
             response.transaction,
             response.txMeta,
           ),
@@ -263,21 +269,20 @@ export function useClosePosition() {
           (err as any).retryable = true;
           throw err;
         }
-        throw await toRelayActionError(error);
+        throw error instanceof Error
+          ? error
+          : new Error("Transaction broadcast failed. Try again.");
       }
     },
     onSuccess: () => {
-      if (walletAddress) {
-        queryClient.invalidateQueries({ queryKey: ["prediction-positions", walletAddress] });
-        queryClient.invalidateQueries({ queryKey: ["prediction-orders", walletAddress] });
-      }
+      scheduleTradingRefreshes(queryClient, walletAddress);
     },
   });
 }
 
 export function useCloseAllPositions() {
   const queryClient = useQueryClient();
-  const { account, signTransactions } = useMobileWallet();
+  const { account, signAndSendTransactions } = useMobileWallet();
   const walletAddress = account?.address.toString() ?? null;
 
   return useMutation<string[], Error, { ownerPubkey: string }>({
@@ -292,8 +297,8 @@ export function useCloseAllPositions() {
 
       for (const r of responses) {
         try {
-          const result = await signAndRelay(
-            (tx) => signTransactions(tx),
+          const result = await signAndSend(
+            (tx, minContextSlot) => signAndSendTransactions(tx, minContextSlot ?? 0),
             r.transaction,
             r.txMeta,
           );
@@ -323,21 +328,14 @@ export function useCloseAllPositions() {
       return signatures;
     },
     onSuccess: () => {
-      if (walletAddress) {
-        queryClient.invalidateQueries({
-          queryKey: ["prediction-positions", walletAddress],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["prediction-orders", walletAddress],
-        });
-      }
+      scheduleTradingRefreshes(queryClient, walletAddress);
     },
   });
 }
 
 export function useClaimPosition() {
   const queryClient = useQueryClient();
-  const { account, signTransactions } = useMobileWallet();
+  const { account, signAndSendTransactions } = useMobileWallet();
   const walletAddress = account?.address.toString() ?? null;
 
   return useMutation<
@@ -374,8 +372,8 @@ export function useClaimPosition() {
       }
 
       try {
-        return await signAndRelay(
-          (tx) => signTransactions(tx),
+        return await signAndSend(
+          (tx, minContextSlot) => signAndSendTransactions(tx, minContextSlot ?? 0),
           response.transaction,
           response.txMeta,
         );
@@ -388,18 +386,13 @@ export function useClaimPosition() {
           (err as any).retryable = true;
           throw err;
         }
-        throw await toRelayActionError(error);
+        throw error instanceof Error
+          ? error
+          : new Error("Transaction broadcast failed. Try again.");
       }
     },
     onSuccess: () => {
-      if (walletAddress) {
-        queryClient.invalidateQueries({
-          queryKey: ["prediction-positions", walletAddress],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["prediction-orders", walletAddress],
-        });
-      }
+      scheduleTradingRefreshes(queryClient, walletAddress);
     },
   });
 }

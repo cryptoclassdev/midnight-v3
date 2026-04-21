@@ -30,6 +30,7 @@ import {
   isTransactionExpired,
   ensureTransactionValid,
   signPredictionTransaction,
+  sendPredictionTransaction,
 } from "../wallet";
 import { withSolanaConnectionFallbacks } from "@/lib/solana";
 
@@ -203,8 +204,80 @@ describe("signPredictionTransaction", () => {
       signPredictionTransaction(signFn, FAKE_BASE64, TX_META),
     ).rejects.toMatchObject({
       code: "WALLET_APPROVAL_REJECTED",
+  });
+});
+
+describe("sendPredictionTransaction", () => {
+  const FAKE_TX_BYTES = new Uint8Array([9, 8, 7, 6, 5, 4, 3, 2]);
+  const FAKE_BASE64 = btoa(String.fromCharCode(...FAKE_TX_BYTES));
+  const TX_META = { blockhash: "abc", lastValidBlockHeight: 1000 };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockWithFallbacks.mockImplementation(async (fn) =>
+      fn({ getBlockHeight: async () => 100 } as never),
+    );
+
+    (VersionedTransaction.deserialize as jest.Mock).mockReturnValue({
+      serialize: () => FAKE_TX_BYTES,
     });
   });
+
+  it("returns wallet signature for successful send", async () => {
+    const sendFn = jest.fn<
+      (tx: VersionedTransaction, minContextSlot?: number) => Promise<string>
+    >();
+    sendFn.mockResolvedValue("sig-123");
+
+    const result = await sendPredictionTransaction(
+      sendFn,
+      FAKE_BASE64,
+      TX_META,
+    );
+
+    expect(result).toBe("sig-123");
+    expect(sendFn).toHaveBeenCalledWith(expect.anything(), 0);
+  });
+
+  it("throws WALLET_APPROVAL_REJECTED on user rejection", async () => {
+    const sendFn = jest.fn<
+      (tx: VersionedTransaction, minContextSlot?: number) => Promise<string>
+    >();
+    sendFn.mockRejectedValue(new Error("User rejected the request"));
+
+    await expect(
+      sendPredictionTransaction(sendFn, FAKE_BASE64, TX_META),
+    ).rejects.toMatchObject({
+      code: "WALLET_APPROVAL_REJECTED",
+    });
+  });
+
+  it("throws TRANSACTION_EXPIRED on expired send errors", async () => {
+    const sendFn = jest.fn<
+      (tx: VersionedTransaction, minContextSlot?: number) => Promise<string>
+    >();
+    sendFn.mockRejectedValue(new Error("Blockhash not found"));
+
+    await expect(
+      sendPredictionTransaction(sendFn, FAKE_BASE64, TX_META),
+    ).rejects.toMatchObject({
+      code: "TRANSACTION_EXPIRED",
+    });
+  });
+
+  it("throws TRANSACTION_SEND_FAILED on other send errors", async () => {
+    const sendFn = jest.fn<
+      (tx: VersionedTransaction, minContextSlot?: number) => Promise<string>
+    >();
+    sendFn.mockRejectedValue(new Error("socket hang up"));
+
+    await expect(
+      sendPredictionTransaction(sendFn, FAKE_BASE64, TX_META),
+    ).rejects.toMatchObject({
+      code: "TRANSACTION_SEND_FAILED",
+    });
+  });
+});
 
   it("throws TRANSACTION_SEND_FAILED on non-rejection sign errors", async () => {
     const signFn = jest.fn<
