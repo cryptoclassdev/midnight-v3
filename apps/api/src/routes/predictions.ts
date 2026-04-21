@@ -12,7 +12,10 @@ import {
 import { prisma } from "@midnight/db";
 import { relaySignedTransaction } from "../services/solana-relay.service";
 import { jupiterCache, type LoadStatus } from "../services/jupiter-cache";
-import { fetchLivePrices } from "../services/jupiter-prediction.service";
+import {
+  fetchLivePrices,
+  pauseBackgroundPredictionReadsForMs,
+} from "../services/jupiter-prediction.service";
 
 const JUPITER_API_URL = "https://api.jup.ag/prediction/v1";
 
@@ -129,6 +132,29 @@ export function getJupiterRetryAfterSeconds(headers: Headers, nowMs = Date.now()
   }
 
   return null;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withPredictionWriteRetry<T>(
+  run: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (!(error instanceof HTTPError) || error.response.status !== 429) {
+      throw error;
+    }
+
+    const retryAfterSeconds = getJupiterRetryAfterSeconds(error.response.headers) ?? 1;
+    const retryDelayMs = Math.min((retryAfterSeconds + 1) * 1000, 8_000);
+
+    pauseBackgroundPredictionReadsForMs(retryDelayMs);
+    await sleep(retryDelayMs);
+    return run();
+  }
 }
 
 // Per-endpoint freshness budgets. On loader failure within these budgets the
@@ -289,7 +315,9 @@ predictionRoutes.post("/predictions/orders", async (c) => {
 
   console.log("[Orders] Request body:", JSON.stringify(jupiterBody, null, 2));
   try {
-    const data = await jupiter.post("orders", { json: jupiterBody }).json();
+    const data = await withPredictionWriteRetry(
+      () => jupiter.post("orders", { json: jupiterBody }).json(),
+    );
     console.log("[Orders] Jupiter response:", JSON.stringify(data, null, 2));
     return c.json(data);
   } catch (err: any) {
@@ -376,18 +404,20 @@ predictionRoutes.delete("/predictions/positions/:positionPubkey", async (c) => {
     return c.json({ error: formatZodErrors(parsed.error) }, 400);
   }
   try {
-    const data = await jupiter
-      .post("orders", {
-        json: {
-          ownerPubkey: parsed.data.ownerPubkey,
-          positionPubkey,
-          isBuy: false,
-          isYes: parsed.data.isYes,
-          contracts: parsed.data.contracts,
-          depositMint: USDC_MINT,
-        },
-      })
-      .json();
+    const data = await withPredictionWriteRetry(
+      () => jupiter
+        .post("orders", {
+          json: {
+            ownerPubkey: parsed.data.ownerPubkey,
+            positionPubkey,
+            isBuy: false,
+            isYes: parsed.data.isYes,
+            contracts: parsed.data.contracts,
+            depositMint: USDC_MINT,
+          },
+        })
+        .json(),
+    );
     return c.json(data);
   } catch (err) {
     return forwardJupiterError(err, c);

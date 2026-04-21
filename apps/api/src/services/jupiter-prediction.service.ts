@@ -68,6 +68,11 @@ function pauseBackgroundPredictionReads(headers?: Headers): void {
   backgroundCooldownUntil = Math.max(backgroundCooldownUntil, now + cooldownMs);
 }
 
+export function pauseBackgroundPredictionReadsForMs(cooldownMs: number): void {
+  const now = Date.now();
+  backgroundCooldownUntil = Math.max(backgroundCooldownUntil, now + cooldownMs);
+}
+
 function logBackgroundBudgetSkip(label: string): void {
   const now = Date.now();
   if (now < backgroundCooldownUntil) {
