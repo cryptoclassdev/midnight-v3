@@ -12,6 +12,7 @@ import {
 import { prisma } from "@midnight/db";
 import { relaySignedTransaction } from "../services/solana-relay.service";
 import { jupiterCache, type LoadStatus } from "../services/jupiter-cache";
+import { fetchLivePrices } from "../services/jupiter-prediction.service";
 
 const JUPITER_API_URL = "https://api.jup.ag/prediction/v1";
 
@@ -25,9 +26,26 @@ const jupiter = ky.create({
 async function forwardJupiterError(err: unknown, c: Context) {
   if (err instanceof HTTPError) {
     const status = err.response.status;
+    const retryAfterSeconds = status === 429
+      ? getJupiterRetryAfterSeconds(err.response.headers)
+      : null;
     const body = await err.response.json().catch(() => null) as { message?: string } | null;
     console.error("[Jupiter]", status, body);
-    // Return sanitized error — don't leak internal Jupiter API details
+    if (status === 429) {
+      if (retryAfterSeconds) {
+        c.header("Retry-After", String(retryAfterSeconds));
+      }
+      return c.json(
+        {
+          error: retryAfterSeconds
+            ? `Prediction markets are rate limited. Retry in ${retryAfterSeconds}s.`
+            : "Prediction markets are temporarily rate limited. Please try again shortly.",
+          code: "JUPITER_RATE_LIMITED",
+          retryAfterSeconds,
+        },
+        429,
+      );
+    }
     const message = typeof body?.message === "string" ? body.message : "Request failed. Please try again.";
     return c.json(
       { error: message },
@@ -42,6 +60,77 @@ function setCacheStatus(c: Context, status: LoadStatus): void {
   c.header("X-Cache", status);
 }
 
+const MICRO_USD = 1_000_000;
+
+type PredictionMarketSnapshot = {
+  id: string;
+  question: string;
+  outcomePrices: unknown;
+  volume: number;
+  endDate: Date | null;
+  closed: boolean;
+  result: string | null;
+};
+
+function readOutcomePrice(outcomePrices: unknown, side: "Yes" | "No"): number {
+  if (!outcomePrices || typeof outcomePrices !== "object") return 0;
+  const raw = (outcomePrices as Record<string, unknown>)[side];
+  return typeof raw === "number" && Number.isFinite(raw) ? raw : 0;
+}
+
+function hasSnapshotPrices(snapshot: PredictionMarketSnapshot): boolean {
+  return readOutcomePrice(snapshot.outcomePrices, "Yes") > 0
+    && readOutcomePrice(snapshot.outcomePrices, "No") > 0;
+}
+
+export function buildPredictionMarketDetailFromSnapshot(snapshot: PredictionMarketSnapshot) {
+  const yesUsd = readOutcomePrice(snapshot.outcomePrices, "Yes");
+  const noUsd = readOutcomePrice(snapshot.outcomePrices, "No");
+  const buyYesPriceUsd = Math.round(yesUsd * MICRO_USD);
+  const buyNoPriceUsd = Math.round(noUsd * MICRO_USD);
+
+  return {
+    marketId: snapshot.id,
+    status: snapshot.closed ? "closed" : "open",
+    result: snapshot.result,
+    openTime: 0,
+    closeTime: snapshot.endDate ? Math.floor(snapshot.endDate.getTime() / 1000) : 0,
+    resolveAt: null,
+    metadata: {
+      title: snapshot.question,
+    },
+    pricing: {
+      buyYesPriceUsd,
+      buyNoPriceUsd,
+      sellYesPriceUsd: buyYesPriceUsd,
+      sellNoPriceUsd: buyNoPriceUsd,
+      volume: snapshot.volume,
+    },
+  };
+}
+
+export function getJupiterRetryAfterSeconds(headers: Headers, nowMs = Date.now()): number | null {
+  const retryAfter = headers.get("retry-after");
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds > 0) {
+      return Math.ceil(seconds);
+    }
+
+    const at = Date.parse(retryAfter);
+    if (Number.isFinite(at)) {
+      return Math.max(1, Math.ceil((at - nowMs) / 1000));
+    }
+  }
+
+  const reset = Number(headers.get("x-ratelimit-reset"));
+  if (Number.isFinite(reset) && reset > 0) {
+    return Math.max(1, Math.ceil(reset - (nowMs / 1000)));
+  }
+
+  return null;
+}
+
 // Per-endpoint freshness budgets. On loader failure within these budgets the
 // cache falls back to the last successful value and sets X-Cache: stale. Long
 // enough to absorb Jupiter's 429 bursts; short enough that a refreshed order
@@ -50,7 +139,6 @@ const TTL_MARKET_MS = 5_000;
 const TTL_ORDERBOOK_MS = 5_000;
 const TTL_TRADING_STATUS_MS = 30_000;
 const TTL_PER_WALLET_MS = 10_000;
-const TTL_LIVE_PRICE_MS = 15_000;
 
 export const predictionRoutes = new Hono();
 
@@ -75,6 +163,24 @@ async function fetchEventVolume(eventId: string): Promise<number | null> {
 predictionRoutes.get("/predictions/markets/:marketId", async (c) => {
   const { marketId } = c.req.param();
   try {
+    const dbMarket = await prisma.predictionMarket.findUnique({
+      where: { id: marketId },
+      select: {
+        id: true,
+        question: true,
+        outcomePrices: true,
+        volume: true,
+        endDate: true,
+        closed: true,
+        result: true,
+      },
+    }).catch(() => null);
+
+    if (dbMarket && hasSnapshotPrices(dbMarket)) {
+      c.header("X-Cache", "db");
+      return c.json(buildPredictionMarketDetailFromSnapshot(dbMarket));
+    }
+
     const { value, status } = await jupiterCache.fetch(
       `market:${marketId}`,
       TTL_MARKET_MS,
@@ -187,7 +293,7 @@ predictionRoutes.post("/predictions/orders", async (c) => {
     console.log("[Orders] Jupiter response:", JSON.stringify(data, null, 2));
     return c.json(data);
   } catch (err: any) {
-    const raw = await err?.response?.text?.().catch(() => null);
+    const raw = await err?.response?.clone?.().text?.().catch(() => null);
     console.error("[Orders] Jupiter error:", err?.response?.status, raw);
     return forwardJupiterError(err, c);
   }
@@ -345,26 +451,6 @@ predictionRoutes.get("/predictions/live", async (c) => {
   const marketIds = idsParam.split(",").filter(Boolean);
   if (marketIds.length === 0) return c.json({ data: {} });
 
-  const results: Record<string, Record<string, number>> = {};
-  await Promise.allSettled(
-    marketIds.map(async (id) => {
-      try {
-        const { value: prices } = await jupiterCache.fetch(
-          `live:${id}`,
-          TTL_LIVE_PRICE_MS,
-          async () => {
-            const market = await jupiter.get(`markets/${id}`).json<{
-              pricing: { buyYesPriceUsd: number; buyNoPriceUsd: number };
-            }>();
-            return {
-              Yes: Math.round((market.pricing.buyYesPriceUsd / 1_000_000) * 100) / 100,
-              No: Math.round((market.pricing.buyNoPriceUsd / 1_000_000) * 100) / 100,
-            };
-          },
-        );
-        results[id] = prices;
-      } catch { /* keep existing DB prices */ }
-    }),
-  );
+  const results = await fetchLivePrices(marketIds);
   return c.json({ data: results });
 });
