@@ -1,8 +1,10 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import type { GenerativeModel, ResponseSchema } from "@google/generative-ai";
 import { ARTICLE_SUMMARY_WORD_LIMIT, ARTICLE_TITLE_MAX_LENGTH } from "@midnight/shared";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+export const GEMINI_REWRITE_PROMPT_VERSION = "article-rewrite-v2";
 
 interface GeminiResult {
   title: string;
@@ -10,7 +12,7 @@ interface GeminiResult {
   breaking: boolean;
 }
 
-const SYSTEM_PROMPT = `You are a viral news editor for a crypto and AI news app. Your job is to rewrite article titles and create summaries.
+export const SYSTEM_PROMPT = `You are a viral news editor for a crypto and AI news app. Your job is to rewrite article titles and create summaries.
 
 Rules:
 - Title: Rewrite to be click-worthy and engaging. Max ${ARTICLE_TITLE_MAX_LENGTH} characters. End on a whole word — never trail off mid-word or with a stray hyphen / em-dash. Use power words. No clickbait lies — keep it factual but compelling.
@@ -18,12 +20,31 @@ Rules:
 
 - Breaking: Set to true ONLY for genuinely significant events: regulatory decisions (ETF approvals, bans), exchange hacks or collapses, protocol-level failures, or major partnership announcements from top-10 projects. Be very conservative — most articles are NOT breaking. When in doubt, set false.
 
-Respond in JSON format only:
-{"title": "...", "summary": "...", "breaking": false}`;
+Return only the requested JSON object.`;
+
+const REWRITE_RESPONSE_SCHEMA: ResponseSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    title: {
+      type: SchemaType.STRING,
+      description: `Rewritten headline, max ${ARTICLE_TITLE_MAX_LENGTH} characters.`,
+    },
+    summary: {
+      type: SchemaType.STRING,
+      description: `Exactly ${ARTICLE_SUMMARY_WORD_LIMIT} words in two short paragraphs separated by "\\n\\n".`,
+    },
+    breaking: {
+      type: SchemaType.BOOLEAN,
+      description: "True only for genuinely significant breaking news.",
+    },
+  },
+  required: ["title", "summary", "breaking"],
+};
 
 const CONTROL_CHAR_REGEX = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
 const DASH_RUN_REGEX = /[-\u2013\u2014]{2,}/g;
 const TRAILING_PUNCT_REGEX = /[\s\p{Pd}\p{Pi}\p{Pf}:,;]+$/u;
+const SENTENCE_END_REGEX = /[.!?]$/;
 
 function sanitize(text: string): string {
   return text.replace(CONTROL_CHAR_REGEX, "").replace(DASH_RUN_REGEX, "\u2014").trim();
@@ -37,20 +58,59 @@ function trimTitleToLimit(title: string, limit: number): string {
   return boundary.replace(TRAILING_PUNCT_REGEX, "").trim();
 }
 
+function countWords(text: string): number {
+  return text.split(/\s+/).filter(Boolean).length;
+}
+
+function normalizeSummary(summary: string): string {
+  const paragraphs = summary
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+
+  return paragraphs.length > 1
+    ? paragraphs.slice(0, 2).join("\n\n")
+    : summary.replace(/[ \t]+/g, " ").trim();
+}
+
+function isValidGeminiResult(result: GeminiResult): boolean {
+  if (!result.title || result.title.length > ARTICLE_TITLE_MAX_LENGTH) return false;
+  if (!result.summary || !SENTENCE_END_REGEX.test(result.summary.trim())) return false;
+  if (countWords(result.summary) < Math.floor(ARTICLE_SUMMARY_WORD_LIMIT * 0.75)) return false;
+  return typeof result.breaking === "boolean";
+}
+
+function fallbackResult(originalTitle: string, originalBody: string): GeminiResult {
+  return {
+    title: trimTitleToLimit(sanitize(originalTitle), ARTICLE_TITLE_MAX_LENGTH),
+    summary: sanitize(originalBody).slice(0, 300),
+    breaking: false,
+  };
+}
+
+function buildUserPrompt(originalTitle: string, originalBody: string): string {
+  return [
+    `Prompt version: ${GEMINI_REWRITE_PROMPT_VERSION}`,
+    `Original title: ${originalTitle}`,
+    `Original content: ${originalBody.slice(0, 6000)}`,
+  ].join("\n\n");
+}
+
 export async function rewriteArticle(
   originalTitle: string,
-  originalBody: string
+  originalBody: string,
+  rewriteModel: GenerativeModel = model,
 ): Promise<GeminiResult> {
   try {
-    const prompt = `Original title: ${originalTitle}\n\nOriginal content: ${originalBody.slice(0, 6000)}`;
-
-    const result = await model.generateContent({
+    const result = await rewriteModel.generateContent({
+      systemInstruction: SYSTEM_PROMPT,
       contents: [
-        { role: "user", parts: [{ text: SYSTEM_PROMPT + "\n\n" + prompt }] },
+        { role: "user", parts: [{ text: buildUserPrompt(originalTitle, originalBody) }] },
       ],
       generationConfig: {
         responseMimeType: "application/json",
-        temperature: 0.7,
+        responseSchema: REWRITE_RESPONSE_SCHEMA,
+        temperature: 0.4,
         maxOutputTokens: 600,
       },
     });
@@ -58,20 +118,19 @@ export async function rewriteArticle(
     const text = result.response.text();
     const parsed = JSON.parse(text) as GeminiResult;
 
-    const title = trimTitleToLimit(sanitize(parsed.title ?? ""), ARTICLE_TITLE_MAX_LENGTH);
-    const summary = sanitize(parsed.summary ?? "");
-
-    return {
-      title,
-      summary,
+    const rewritten = {
+      title: trimTitleToLimit(sanitize(parsed.title ?? ""), ARTICLE_TITLE_MAX_LENGTH),
+      summary: normalizeSummary(sanitize(parsed.summary ?? "")),
       breaking: parsed.breaking === true,
     };
+
+    if (!isValidGeminiResult(rewritten)) {
+      throw new Error("Gemini response failed validation");
+    }
+
+    return rewritten;
   } catch (error) {
     console.error("Gemini rewrite failed:", error);
-    return {
-      title: trimTitleToLimit(sanitize(originalTitle), ARTICLE_TITLE_MAX_LENGTH),
-      summary: sanitize(originalBody).slice(0, 300),
-      breaking: false,
-    };
+    return fallbackResult(originalTitle, originalBody);
   }
 }
