@@ -48,6 +48,7 @@ jest.mock("@wallet-ui/react-native-web3js", () => ({
     disconnect: jest.fn(),
     signTransaction: jest.fn(),
     signAndSendTransaction: jest.fn(),
+    signAndSendTransactions: jest.fn(),
     signMessage: jest.fn(),
     connection: {},
   })),

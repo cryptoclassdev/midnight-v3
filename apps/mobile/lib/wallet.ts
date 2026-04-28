@@ -7,12 +7,14 @@ import { withSolanaConnectionFallbacks } from "@/lib/solana";
 export type WalletErrorCode =
   | "WALLET_APPROVAL_REJECTED"
   | "TRANSACTION_EXPIRED"
-  | "TRANSACTION_SEND_FAILED";
+  | "TRANSACTION_SEND_FAILED"
+  | "TRANSACTION_SUBMISSION_UNKNOWN";
 
 const WALLET_ERROR_CODES = new Set<WalletErrorCode>([
   "WALLET_APPROVAL_REJECTED",
   "TRANSACTION_EXPIRED",
   "TRANSACTION_SEND_FAILED",
+  "TRANSACTION_SUBMISSION_UNKNOWN",
 ]);
 
 export class WalletError extends Error {
@@ -53,6 +55,8 @@ const ERROR_MESSAGES: Record<WalletErrorCode, string> = {
   TRANSACTION_EXPIRED:
     "Transaction expired before approval. Try placing the bet again.",
   TRANSACTION_SEND_FAILED: "Transaction broadcast failed. Try again.",
+  TRANSACTION_SUBMISSION_UNKNOWN:
+    "We couldn't verify the wallet response. Checking your transaction status.",
 };
 
 export function walletError(
@@ -145,4 +149,34 @@ export async function signPredictionTransaction(
   // app returns from the wallet (background → foreground), when the network
   // stack is often not yet ready, causing spurious "network request failed".
   return fromUint8Array(signedTx.serialize());
+}
+
+export async function sendPredictionTransaction(
+  sendFn: (tx: VersionedTransaction, minContextSlot?: number) => Promise<string>,
+  base64Transaction: string,
+  txMeta: TransactionMeta,
+): Promise<string> {
+  await ensureTransactionValid(txMeta);
+
+  const txBytes = toUint8Array(base64Transaction);
+  const transaction = VersionedTransaction.deserialize(txBytes);
+
+  try {
+    return await withTimeout(
+      // `minContextSlot` is optional in the underlying MWA protocol, but the
+      // wallet-ui wrapper types it as required. Passing 0 preserves the default
+      // behavior without adding another RPC read on the hot trade path.
+      sendFn(transaction, 0),
+      WALLET_SIGN_TIMEOUT_MS,
+      "Wallet send",
+    );
+  } catch (error) {
+    if (isUserRejection(error)) {
+      throw walletError("WALLET_APPROVAL_REJECTED", error);
+    }
+    if (isTransactionExpired(error)) {
+      throw walletError("TRANSACTION_EXPIRED", error);
+    }
+    throw walletError("TRANSACTION_SUBMISSION_UNKNOWN", error);
+  }
 }

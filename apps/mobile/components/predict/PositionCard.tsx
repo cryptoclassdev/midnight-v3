@@ -80,7 +80,7 @@ export const PositionCard = memo(function PositionCard({
     // asked the wallet to sign yet, so "signing" would be a lie.
     setProgressState("preparing");
     try {
-      await closePos.mutateAsync({
+      const result = await closePos.mutateAsync({
         positionPubkey: position.pubkey,
         ownerPubkey: position.ownerPubkey,
         isYes: position.isYes,
@@ -89,7 +89,13 @@ export const PositionCard = memo(function PositionCard({
       });
       setProgressState("idle");
       setSheetVisible(false);
-      showToast("success", "Position Closed", "Your position has been sold.");
+      if (result.verification === "uncertain") {
+        showToast("info", "Checking Close Status", "Your close may have landed. Refreshing positions now.");
+      } else if (result.status === "pending") {
+        showToast("info", "Close Pending", "Your close order was submitted.");
+      } else {
+        showToast("success", "Position Closed", "Your position has been sold.");
+      }
     } catch (err: unknown) {
       setProgressState("idle");
       const msg = err instanceof Error ? err.message : String(err);
@@ -105,13 +111,19 @@ export const PositionCard = memo(function PositionCard({
     setLastError(null);
     setProgressState("preparing");
     try {
-      await claimPos.mutateAsync({
+      const result = await claimPos.mutateAsync({
         positionPubkey: position.pubkey,
         ownerPubkey: position.ownerPubkey,
         claimable: position.claimable,
       });
       setProgressState("idle");
-      showToast("success", "Claimed!", "Winnings have been sent to your wallet.");
+      if (result.verification === "uncertain") {
+        showToast("info", "Checking Claim Status", "Your claim may have landed. Refreshing wallet state now.");
+      } else if (result.status === "pending") {
+        showToast("info", "Claim Pending", "Your claim transaction was submitted.");
+      } else {
+        showToast("success", "Claimed!", "Winnings have been sent to your wallet.");
+      }
     } catch (err: unknown) {
       setProgressState("idle");
       const msg = err instanceof Error ? err.message : String(err);

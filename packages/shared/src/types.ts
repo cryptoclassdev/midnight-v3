@@ -196,8 +196,12 @@ export interface PredictionOrder {
   contracts: string;
   priceUsd: string;
   status: string;
+  externalOrderId?: string | null;
+  createdAt?: number | null;
+  updatedAt?: number | null;
 }
 
 export interface TradingStatus {
   trading_active: boolean;
+  minimum_order_usd?: number;
 }

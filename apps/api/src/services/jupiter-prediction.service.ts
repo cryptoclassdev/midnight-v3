@@ -1,10 +1,15 @@
-import ky from "ky";
+import ky, { HTTPError } from "ky";
 import { prisma } from "@midnight/db";
 import { sendSettlementNotification } from "./notification.service";
 
 const JUPITER_API_URL = "https://api.jup.ag/prediction/v1";
 const MIN_VOLUME_USD = 1000;
 const MICRO_USD = 1_000_000;
+const BACKGROUND_PREDICTION_WINDOW_MS = 10_000;
+const BACKGROUND_PREDICTION_REQUEST_LIMIT = 2;
+const BACKGROUND_PREDICTION_FALLBACK_COOLDOWN_MS = 30_000;
+const BACKFILL_ARTICLE_LIMIT = 4;
+const STAGING_RELEASE_MODE = (process.env.RAILWAY_PUBLIC_DOMAIN ?? "").includes("staging");
 
 const jupiterClient = ky.create({
   prefixUrl: JUPITER_API_URL,
@@ -14,6 +19,91 @@ const jupiterClient = ky.create({
   timeout: 8_000,
   retry: { limit: 1 },
 });
+
+let backgroundWindowStartedAt = 0;
+let backgroundRequestsUsed = 0;
+let backgroundCooldownUntil = 0;
+
+function resetBackgroundWindow(now: number): void {
+  if (backgroundWindowStartedAt === 0 || now - backgroundWindowStartedAt >= BACKGROUND_PREDICTION_WINDOW_MS) {
+    backgroundWindowStartedAt = now;
+    backgroundRequestsUsed = 0;
+  }
+}
+
+function getCooldownFromHeaders(headers: Headers | undefined, now = Date.now()): number {
+  if (!headers) return BACKGROUND_PREDICTION_FALLBACK_COOLDOWN_MS;
+
+  const retryAfter = headers.get("retry-after");
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds > 0) {
+      return Math.ceil(seconds * 1000);
+    }
+
+    const at = Date.parse(retryAfter);
+    if (Number.isFinite(at) && at > now) {
+      return at - now;
+    }
+  }
+
+  const resetAt = Number(headers.get("x-ratelimit-reset"));
+  if (Number.isFinite(resetAt) && resetAt > 0) {
+    return Math.max(1_000, Math.ceil((resetAt * 1000) - now));
+  }
+
+  return BACKGROUND_PREDICTION_FALLBACK_COOLDOWN_MS;
+}
+
+function canUseBackgroundPredictionBudget(now = Date.now()): boolean {
+  resetBackgroundWindow(now);
+  if (now < backgroundCooldownUntil) return false;
+  if (backgroundRequestsUsed >= BACKGROUND_PREDICTION_REQUEST_LIMIT) return false;
+  backgroundRequestsUsed += 1;
+  return true;
+}
+
+function pauseBackgroundPredictionReads(headers?: Headers): void {
+  const now = Date.now();
+  const cooldownMs = getCooldownFromHeaders(headers, now);
+  backgroundCooldownUntil = Math.max(backgroundCooldownUntil, now + cooldownMs);
+}
+
+export function pauseBackgroundPredictionReadsForMs(cooldownMs: number): void {
+  const now = Date.now();
+  backgroundCooldownUntil = Math.max(backgroundCooldownUntil, now + cooldownMs);
+}
+
+function logBackgroundBudgetSkip(label: string): void {
+  const now = Date.now();
+  if (now < backgroundCooldownUntil) {
+    const seconds = Math.max(1, Math.ceil((backgroundCooldownUntil - now) / 1000));
+    console.warn(`[Jupiter] Skipping ${label}; background reads paused for ${seconds}s`);
+    return;
+  }
+  console.warn(`[Jupiter] Skipping ${label}; background request budget exhausted for this window`);
+}
+
+async function loadBackgroundPrediction<T>(
+  label: string,
+  loader: () => Promise<T>,
+): Promise<T | null> {
+  if (!canUseBackgroundPredictionBudget()) {
+    logBackgroundBudgetSkip(label);
+    return null;
+  }
+
+  try {
+    return await loader();
+  } catch (error) {
+    if (error instanceof HTTPError && error.response.status === 429) {
+      pauseBackgroundPredictionReads(error.response.headers);
+      logBackgroundBudgetSkip(label);
+      return null;
+    }
+    throw error;
+  }
+}
 
 // --- Jupiter API response types (actual API shape) ---
 
@@ -85,6 +175,11 @@ export async function matchMarketForArticle(
   originalTitle: string,
   _rewrittenTitle?: string,
 ): Promise<void> {
+  if (STAGING_RELEASE_MODE) {
+    console.log("[Jupiter] Skipping article matching in staging release mode");
+    return;
+  }
+
   try {
     // Check how many markets already linked — skip if already at cap
     const existingLinks = await prisma.articlePredictionMarket.findMany({
@@ -97,11 +192,15 @@ export async function matchMarketForArticle(
 
     if (slotsRemaining <= 0) return;
 
-    const response = await jupiterClient
-      .get("events/search", {
-        searchParams: { query: originalTitle.slice(0, 120), limit: 10 },
-      })
-      .json<JupiterSearchResponse>();
+    const response = await loadBackgroundPrediction(
+        `match search for "${originalTitle.slice(0, 40)}"`,
+        () => jupiterClient
+          .get("events/search", {
+          searchParams: { query: originalTitle.slice(0, 120), limit: 2 },
+        })
+        .json<JupiterSearchResponse>(),
+    );
+    if (!response) return;
 
     const events = response.data ?? [];
     console.log(`[Jupiter] Search returned ${events.length} events for "${originalTitle.slice(0, 50)}"`);
@@ -119,13 +218,14 @@ export async function matchMarketForArticle(
       if (!searchEvent.isActive) continue;
 
       let fullEvent: JupiterEvent;
-      try {
-        fullEvent = await jupiterClient
+      const loadedEvent = await loadBackgroundPrediction(
+        `load event ${searchEvent.eventId}`,
+        () => jupiterClient
           .get(`events/${searchEvent.eventId}`)
-          .json<JupiterEvent>();
-      } catch {
-        continue;
-      }
+          .json<JupiterEvent>(),
+      );
+      if (!loadedEvent) break;
+      fullEvent = loadedEvent;
 
       // Only binary events — single-market events are true Yes/No questions
       if (fullEvent.markets.length !== 1) continue;
@@ -221,6 +321,11 @@ export async function matchMarketForArticle(
  * Backfill prediction market matches for articles with fewer than 3 markets.
  */
 export async function backfillMarketMatches(): Promise<void> {
+  if (STAGING_RELEASE_MODE) {
+    console.log("[Jupiter] Skipping market backfill in staging release mode");
+    return;
+  }
+
   // Find articles with fewer than MAX_MARKETS_PER_ARTICLE linked markets
   const undermatched = await prisma.$queryRaw<Array<{ id: string; originalTitle: string; title: string; linkCount: bigint }>>`
     SELECT a.id, a."originalTitle", a.title, COUNT(apm.id)::bigint AS "linkCount"
@@ -229,7 +334,7 @@ export async function backfillMarketMatches(): Promise<void> {
     GROUP BY a.id
     HAVING COUNT(apm.id) < ${MAX_MARKETS_PER_ARTICLE}
     ORDER BY a."publishedAt" DESC
-    LIMIT 100
+    LIMIT ${BACKFILL_ARTICLE_LIMIT}
   `;
 
   if (undermatched.length === 0) {
@@ -260,6 +365,11 @@ export async function backfillMarketMatches(): Promise<void> {
  * Refresh outcomePrices for all active (non-closed) prediction markets.
  */
 export async function refreshMarketPrices(): Promise<void> {
+  if (STAGING_RELEASE_MODE) {
+    console.log("[Jupiter] Skipping market refresh in staging release mode");
+    return;
+  }
+
   const duplicateGroups = await prisma.predictionMarket.groupBy({
     by: ["eventId"],
     _count: { eventId: true },
@@ -282,6 +392,8 @@ export async function refreshMarketPrices(): Promise<void> {
 
   const activeMarkets = await prisma.predictionMarket.findMany({
     where: { closed: false },
+    orderBy: { updatedAt: "asc" },
+    take: BACKGROUND_PREDICTION_REQUEST_LIMIT,
     select: { id: true, eventId: true, question: true, result: true },
   });
 
@@ -295,9 +407,13 @@ export async function refreshMarketPrices(): Promise<void> {
   let updated = 0;
   for (const market of activeMarkets) {
     try {
-      const fresh = await jupiterClient
-        .get(`markets/${market.id}`)
-        .json<JupiterMarket>();
+      const fresh = await loadBackgroundPrediction(
+        `refresh market ${market.id}`,
+        () => jupiterClient
+          .get(`markets/${market.id}`)
+          .json<JupiterMarket>(),
+      );
+      if (!fresh) break;
 
       // Skip if market lost binary pricing
       if (!fresh.pricing || fresh.pricing.buyYesPriceUsd <= 0 || fresh.pricing.buyNoPriceUsd <= 0) {
@@ -363,40 +479,22 @@ async function notifySettlement(marketId: string, question: string, result: stri
 }
 
 /**
- * Fetch live prices for specific market IDs.
- * Tries Jupiter API first, falls back to DB-cached prices.
+ * Fetch live prices for specific market IDs from our DB snapshot.
+ * Runtime reads should not consume the shared Jupiter quota.
  */
 export async function fetchLivePrices(
   marketIds: string[],
 ): Promise<Record<string, Record<string, number>>> {
   const results: Record<string, Record<string, number>> = {};
 
-  await Promise.allSettled(
-    marketIds.map(async (id) => {
-      try {
-        const market = await jupiterClient
-          .get(`markets/${id}`)
-          .json<JupiterMarket>();
-
-        results[id] = buildOutcomePrices(market.pricing);
-      } catch {
-        // Will fall back to DB below
-      }
-    }),
-  );
-
-  // For any IDs not resolved by API, serve from DB
-  const missing = marketIds.filter((id) => !results[id]);
-  if (missing.length > 0) {
-    const dbMarkets = await prisma.predictionMarket.findMany({
-      where: { id: { in: missing } },
-      select: { id: true, outcomePrices: true },
-    });
-    for (const m of dbMarkets) {
-      const prices = m.outcomePrices as Record<string, number> | null;
-      if (prices && Object.keys(prices).length > 0) {
-        results[m.id] = prices;
-      }
+  const dbMarkets = await prisma.predictionMarket.findMany({
+    where: { id: { in: marketIds } },
+    select: { id: true, outcomePrices: true },
+  });
+  for (const market of dbMarkets) {
+    const prices = market.outcomePrices as Record<string, number> | null;
+    if (prices && Object.keys(prices).length > 0) {
+      results[market.id] = prices;
     }
   }
 

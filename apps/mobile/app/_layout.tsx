@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppState, type AppStateStatus } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -31,7 +31,9 @@ import { APP_IDENTITY, SOLANA_MWA_CHAIN, SOLANA_RPC_URL } from "@/lib/solana";
 import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { MidnightIntro } from "@/components/branding/MidnightIntro";
 import { useNotifications } from "@/hooks/useNotifications";
+import { PredictionTradeReconciliation } from "@/components/trading/PredictionTradeReconciliation";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -62,13 +64,13 @@ function WalletDataPrefetch() {
   useEffect(() => {
     if (!address) return;
     queryClient.prefetchQuery({
-      queryKey: ["prediction-positions", address],
-      queryFn: () => fetchPositions(address),
+      queryKey: ["prediction-positions", address, "cached"],
+      queryFn: () => fetchPositions(address, { fresh: false }),
       staleTime: WALLET_DATA_STALE_TIME_MS,
     });
     queryClient.prefetchQuery({
-      queryKey: ["prediction-orders", address],
-      queryFn: () => fetchOrders(address),
+      queryKey: ["prediction-orders", address, "cached"],
+      queryFn: () => fetchOrders(address, { fresh: false }),
       staleTime: WALLET_DATA_STALE_TIME_MS,
     });
   }, [address, queryClient]);
@@ -89,6 +91,7 @@ function RootLayout() {
   const theme = useAppStore((s) => s.theme);
   const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);
   const themeColors = colors[theme];
+  const [showIntro, setShowIntro] = useState(true);
 
   const [fontsLoaded] = useFonts({
     Anton_400Regular,
@@ -108,6 +111,10 @@ function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
+
+  const handleIntroFinish = useCallback(() => {
+    setShowIntro(false);
+  }, []);
 
   // Refetch active queries when app returns to foreground
   useEffect(() => {
@@ -136,7 +143,9 @@ function RootLayout() {
             <StatusBar style={theme === "dark" ? "light" : "dark"} />
             <NotificationBootstrap />
             <WalletDataPrefetch />
+            <PredictionTradeReconciliation />
             <OnboardingFlow />
+            <MidnightIntro visible={showIntro} onFinish={handleIntroFinish} />
           </MobileWalletProvider>
         </QueryClientProvider>
       </ErrorBoundary>
@@ -155,6 +164,7 @@ function RootLayout() {
             <StatusBar style={theme === "dark" ? "light" : "dark"} />
             <NotificationBootstrap />
             <WalletDataPrefetch />
+            <PredictionTradeReconciliation />
             <Stack
               screenOptions={{
                 headerShown: false,
@@ -178,6 +188,7 @@ function RootLayout() {
               />
             </Stack>
             <ToastProvider />
+            <MidnightIntro visible={showIntro} onFinish={handleIntroFinish} />
           </MobileWalletProvider>
         </QueryClientProvider>
       </GestureHandlerRootView>

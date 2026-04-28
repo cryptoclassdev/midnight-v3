@@ -6,8 +6,6 @@ import type {
   CreateOrderRequest,
   CreateOrderResponse,
   ClaimPositionResponse,
-  SubmitSignedTransactionRequest,
-  SubmitSignedTransactionResponse,
   PredictionOrder,
   PredictionPosition,
   JupiterPaginatedResponse,
@@ -17,8 +15,15 @@ const BASE = "api/v1/predictions";
 
 // --- Markets ---
 
-export function fetchMarket(marketId: string): Promise<PredictionMarketDetail> {
-  return api.get(`${BASE}/markets/${marketId}`).json();
+export function fetchMarket(
+  marketId: string,
+  options?: { fresh?: boolean },
+): Promise<PredictionMarketDetail> {
+  return api
+    .get(`${BASE}/markets/${marketId}`, {
+      searchParams: options?.fresh ? { fresh: "1" } : undefined,
+    })
+    .json();
 }
 
 export function fetchOrderbook(marketId: string): Promise<OrderbookData> {
@@ -35,50 +40,34 @@ export function createOrder(body: CreateOrderRequest): Promise<CreateOrderRespon
   return api.post(`${BASE}/orders`, { json: body }).json();
 }
 
-export async function submitSignedTransaction(
-  body: SubmitSignedTransactionRequest,
-): Promise<SubmitSignedTransactionResponse> {
-  try {
-    return await api
-      .post(`${BASE}/transactions/submit`, {
-        json: body,
-        timeout: 45_000,
-        retry: 0,
-      })
-      .json();
-  } catch (err) {
-    // After returning from wallet app (background → foreground), the network
-    // stack often isn't ready yet, causing "Network request failed". Wait
-    // briefly and retry once.
-    const msg = err instanceof Error ? err.message : "";
-    if (/network request failed/i.test(msg)) {
-      await new Promise((r) => setTimeout(r, 1500));
-      return api
-        .post(`${BASE}/transactions/submit`, {
-          json: body,
-          timeout: 45_000,
-          retry: 0,
-        })
-        .json();
-    }
-    throw err;
-  }
-}
-
 // --- Orders ---
 
 export function fetchOrders(
   ownerPubkey: string,
+  options?: { fresh?: boolean },
 ): Promise<JupiterPaginatedResponse<PredictionOrder>> {
-  return api.get(`${BASE}/orders`, { searchParams: { ownerPubkey } }).json();
+  return api
+    .get(`${BASE}/orders`, {
+      searchParams: options?.fresh
+        ? { ownerPubkey, fresh: "1" }
+        : { ownerPubkey },
+    })
+    .json();
 }
 
 // --- Positions ---
 
 export function fetchPositions(
   ownerPubkey: string,
+  options?: { fresh?: boolean },
 ): Promise<JupiterPaginatedResponse<PredictionPosition>> {
-  return api.get(`${BASE}/positions`, { searchParams: { ownerPubkey } }).json();
+  return api
+    .get(`${BASE}/positions`, {
+      searchParams: options?.fresh
+        ? { ownerPubkey, fresh: "1" }
+        : { ownerPubkey },
+    })
+    .json();
 }
 
 export function fetchPosition(positionPubkey: string): Promise<PredictionPosition> {

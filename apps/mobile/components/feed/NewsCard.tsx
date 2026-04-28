@@ -100,7 +100,7 @@ function timeAgo(dateString: string): string {
 
 interface NewsCardProps {
   article: Article;
-  onSwipeBet: (marketId: string, side: "yes" | "no") => void;
+  onSwipeBet: (marketId: string, side: "yes" | "no", indicativePriceUsd: number | null) => void;
   walletConnected: boolean;
 }
 
@@ -198,6 +198,9 @@ export const NewsCard = memo(function NewsCard({ article, onSwipeBet, walletConn
               placeholder={article.imageBlurhash ?? undefined}
               style={styles.image}
               contentFit="cover"
+              cachePolicy="memory-disk"
+              priority="high"
+              recyclingKey={article.id}
               transition={300}
               accessibilityLabel={`Image for ${article.sourceName} article`}
             />

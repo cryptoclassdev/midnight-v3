@@ -1,19 +1,47 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useMobileWallet } from "@wallet-ui/react-native-web3js";
 import { useAppStore, QUICK_BET_MIN } from "@/lib/store";
-import { useCreateOrder } from "@/hooks/usePredictionTrading";
-import { usdToMicro, USDC_MINT } from "@midnight/shared";
+import { useCreateOrder, useTradingStatus } from "@/hooks/usePredictionTrading";
+import { getMinimumTradeUsdFromError } from "@/lib/prediction-errors";
+import { fetchMarket } from "@/lib/prediction-client";
+import { microToUsd, usdToMicro, USDC_MINT } from "@midnight/shared";
 import { showToast, updateToast } from "@/lib/toast";
 import * as haptics from "@/lib/haptics";
 
 const UNDO_WINDOW_MS = 3000;
+const SWIPE_QUOTE_DRIFT_ABORT_USD = 0.03;
 
 interface PendingBet {
   marketId: string;
   side: "yes" | "no";
   amount: number;
+  indicativePriceUsd: number | null;
   timer: ReturnType<typeof setTimeout>;
   toastId: string;
+}
+
+export function getFreshSwipePriceUsd(
+  pricing: {
+    buyYesPriceUsd: number;
+    buyNoPriceUsd: number;
+  },
+  side: "yes" | "no",
+): number {
+  return microToUsd(
+    side === "yes" ? pricing.buyYesPriceUsd : pricing.buyNoPriceUsd,
+  );
+}
+
+export function formatSwipePrice(priceUsd: number): string {
+  return `${Math.round(priceUsd * 100)}\u00A2`;
+}
+
+export function shouldAbortForQuoteDrift(
+  indicativePriceUsd: number | null,
+  freshPriceUsd: number,
+): boolean {
+  if (indicativePriceUsd == null || indicativePriceUsd <= 0) return false;
+  return Math.abs(freshPriceUsd - indicativePriceUsd) >= SWIPE_QUOTE_DRIFT_ABORT_USD;
 }
 
 /**
@@ -28,11 +56,22 @@ export function useSwipeBet() {
   const { account } = useMobileWallet();
   const walletAddress = account?.address.toString() ?? null;
   const createOrder = useCreateOrder();
+  const { data: tradingStatus } = useTradingStatus();
   const quickBetAmount = useAppStore((s) => s.quickBetAmount);
   const pendingRef = useRef<PendingBet | null>(null);
+  const minimumQuickBetUsd = Math.max(
+    QUICK_BET_MIN,
+    tradingStatus?.minimum_order_usd ?? QUICK_BET_MIN,
+  );
 
   const executeBet = useCallback(
-    async (marketId: string, side: "yes" | "no", amount: number, toastId: string) => {
+    async (
+      marketId: string,
+      side: "yes" | "no",
+      amount: number,
+      indicativePriceUsd: number | null,
+      toastId: string,
+    ) => {
       if (!walletAddress) {
         updateToast(toastId, {
           variant: "error",
@@ -44,12 +83,43 @@ export function useSwipeBet() {
         return;
       }
 
-      if (amount < QUICK_BET_MIN) {
+      if (amount < minimumQuickBetUsd) {
         updateToast(toastId, {
           variant: "error",
           title: "Bet Too Small",
-          message: `Minimum bet is $${QUICK_BET_MIN}`,
+          message: `Minimum bet is $${minimumQuickBetUsd}`,
           duration: 3000,
+          onTap: null,
+          shake: true,
+        });
+        return;
+      }
+
+      let freshPriceUsd: number;
+      try {
+        const market = await fetchMarket(marketId, { fresh: true });
+        freshPriceUsd = getFreshSwipePriceUsd(market.pricing, side);
+      } catch (error) {
+        updateToast(toastId, {
+          variant: "error",
+          title: "Price Refresh Failed",
+          message: "Couldn't refresh the latest quote. Open the market sheet or try the swipe again.",
+          duration: 4500,
+          onTap: null,
+          shake: true,
+        });
+        return;
+      }
+
+      if (shouldAbortForQuoteDrift(indicativePriceUsd, freshPriceUsd)) {
+        updateToast(toastId, {
+          variant: "info",
+          title: "Price Updated",
+          message:
+            indicativePriceUsd == null
+              ? `Latest ${side.toUpperCase()} price is ${formatSwipePrice(freshPriceUsd)}. Swipe again to bet at this quote.`
+              : `${side.toUpperCase()} moved from ${formatSwipePrice(indicativePriceUsd)} to ${formatSwipePrice(freshPriceUsd)}. Swipe again to bet at the latest quote.`,
+          duration: 5000,
           onTap: null,
           shake: true,
         });
@@ -59,7 +129,7 @@ export function useSwipeBet() {
       updateToast(toastId, {
         variant: "info",
         title: "Signing...",
-        message: `$${amount} on ${side.toUpperCase()}`,
+        message: `$${amount} on ${side.toUpperCase()} at ~${formatSwipePrice(freshPriceUsd)}`,
         duration: 0,
         onTap: null,
       });
@@ -74,7 +144,15 @@ export function useSwipeBet() {
           depositMint: USDC_MINT,
         });
 
-        if (result.status === "pending") {
+        if (result.verification === "uncertain") {
+          haptics.lightImpact();
+          updateToast(toastId, {
+            variant: "info",
+            title: "Checking Trade Status",
+            message: `$${amount} on ${side.toUpperCase()} may have landed. Refreshing positions…`,
+            duration: 5000,
+          });
+        } else if (result.status === "pending") {
           haptics.lightImpact();
           updateToast(toastId, {
             variant: "info",
@@ -93,7 +171,12 @@ export function useSwipeBet() {
         }
       } catch (err: unknown) {
         haptics.error();
-        const message = err instanceof Error ? err.message : String(err);
+        const minimumTradeUsd = getMinimumTradeUsdFromError(err);
+        const message = minimumTradeUsd
+          ? `Minimum bet for this market is >$${minimumTradeUsd.toFixed(2)}.`
+          : err instanceof Error
+            ? err.message
+            : String(err);
         const retryable = err instanceof Error && (err as any).retryable === true;
         updateToast(toastId, {
           variant: "error",
@@ -102,12 +185,12 @@ export function useSwipeBet() {
           duration: retryable ? 6000 : 4000,
           shake: true,
           onTap: retryable
-            ? () => { executeBet(marketId, side, amount, toastId); }
+            ? () => { executeBet(marketId, side, amount, indicativePriceUsd, toastId); }
             : undefined,
         });
       }
     },
-    [walletAddress, createOrder],
+    [walletAddress, createOrder, minimumQuickBetUsd],
   );
 
   const cancelPending = useCallback(() => {
@@ -145,7 +228,7 @@ export function useSwipeBet() {
   }, []);
 
   const swipeBet = useCallback(
-    (marketId: string, side: "yes" | "no") => {
+    (marketId: string, side: "yes" | "no", indicativePriceUsd: number | null = null) => {
       if (!walletAddress) {
         haptics.warning();
         showToast(
@@ -180,10 +263,10 @@ export function useSwipeBet() {
       // Set up deferred execution
       const timer = setTimeout(() => {
         pendingRef.current = null;
-        executeBet(marketId, side, amount, toastId);
+        executeBet(marketId, side, amount, indicativePriceUsd, toastId);
       }, UNDO_WINDOW_MS);
 
-      pendingRef.current = { marketId, side, amount, timer, toastId };
+      pendingRef.current = { marketId, side, amount, indicativePriceUsd, timer, toastId };
     },
     [walletAddress, quickBetAmount, executeBet, cancelPending],
   );
